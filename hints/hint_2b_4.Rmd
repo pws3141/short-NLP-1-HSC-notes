@@ -1,0 +1,10 @@
+4) Can you write a regex to extract the one birthday in the sentence below?
+
+```{r }
+sentrence_with_birthday <- "Natasha Smyth was born on 30-01-1999 and loves NLP."
+
+regex_string <- "\\d{2}-\\d{2}-\\d{4}"
+
+birthday<-str_extract(sentrence_with_birthday, regex_string)
+print(birthday)
+```

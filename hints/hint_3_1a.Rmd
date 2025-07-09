@@ -1,0 +1,18 @@
+things that might go wrong:
+
+- are your variable names consistent? if you are putting something in a new variable, are you later using that new variable?
+
+```{r}
+fruit <- "banana"
+fruit_large <- toupper(fruit)
+print(fruit)
+# oh no! banana is still small?
+```
+- if you changed column names first, remember to use those new column names in the code that follows
+```{r}
+#note: this code is made up and won't work
+fruits_df <- read.csv("data/fruits.csv") 
+# say original file has columns "named", "hue", "measurement"
+names(fruits_df) <- c("name", "color", "size")
+fruits_df_yellow <- subset(fruits_df, hue = "yellow")  #
+```

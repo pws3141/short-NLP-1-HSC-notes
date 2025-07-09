@@ -1,0 +1,359 @@
+---
+title: "Badge 2b Regular Expressions"
+output: html_document
+date: "2024-09-12"
+---
+
+# Regular Expressions
+
+In this notebook we will look at Regular Expression in R.
+
+## What are Regular Expressions?
+
+Regular expressions are a concise and flexible tool for describing patterns in strings. We are going to show examples using *stringr* functionality and the *gsub* function.
+
+We covered some basic pattern matching in Badge 2-1 Stings using *str_extract*, *str_detect*, *str_replace* (recap of these below)
+
+```{r stringFnc}
+library(stringr)
+mystring <- c('We love NLP! Do you LOVE NLP?')
+
+# outputs the characters where the word is found - only outputs the first one str_locate(mystring, "NLP")
+
+#Replaces the first word with the last
+str_replace(mystring, "We", "Cats")
+
+#Detects if the string is present
+str_extract(mystring, "love") 
+```
+
+Regular expressions can be complex use a lot of punctuation characters. It can seem overwhelming and hard to understand. It takes time and practice to learn regular expressions ... and patience.
+
+Let's recap on some of the things we learned in the slides for this badge.
+
+## Finding Patterns
+
+**Anchors:**
+
+By default, regular expressions match any part of a string. It can be useful to anchor the regular expression to match from the start or end of the string:
+
+`^` matches the start of string. `$` matches the end of the string.
+
+```{r anchors}
+
+mystring <- c('We love cats! We are not so keen on spiders.')
+
+#detects if We followed by at least one space is present at the start of our string.
+str_extract(mystring, "^We\\s+")
+
+mystring <- c('We', 'Love', 'Cats', 'not', 'keen', 'on', 'spiders')
+
+#detects where s is at the end of our string.
+str_extract(mystring, "s$") 
+```
+
+Quantifiers control how many times a pattern can match:
+
+-   `?` makes a pattern optional (i.e. it matches 0 or 1 times)
+
+-   `+` lets a pattern repeat (i.e. it matches at least once)
+
+-   `*` lets a pattern be optional or repeat (i.e. it matches any number of times, including 0).
+
+-   `{3,7}` lets a pattern repeat between 3 and 7 times (you can change it to any other two numbers you'd like)
+
+Character classes are defined by `[ ]` and let you match a set of characters, e.g., `[Mm]` matches “M”, “m”.
+
+You can also invert the match by starting with `^`: `[\^Mm]` matches anything except “M”, “m”, [A-Z] matches all upper case characters
+
+## Replacing many occurrences of patterns (gsub)
+
+Above we just thought about finding things in strings.
+
+We will use *gsub* to find extra spaces in our sentence. The function *sub* (like str_replace) can be used but this only finds the first match, but a more powerful *gsub* finds all matches in a string.( it stands for "a global sub")
+
+```{r gsub}
+
+my_sentences <-
+  c(
+    "Hello,  how are you today?     I am looking forward to fun with NLP. Are you? Hello to you to, yes I am ."
+  )
+print(my_sentences)
+
+# Both sentences have extra spaces. Lets look at how we can fix that by finding multiple spaces and replacing with a single space.
+my_sentences_updated <- gsub('\\s+', ' ', my_sentences)
+
+print(my_sentences_updated)
+
+```
+
+OK, brace brace, we will do something simple: identify and clean-up multiple space characters (replace them with just one space character). But as we do it... we will learn a lot of stuff about escaping.
+
+## ESCAPING special meanings of characters with a `\`
+
+**example: recognising a sentence:**
+
+Example of how to capture patterns in brackets `( )` to replace only parts of strings.
+
+Let's imagine we wanted to fix the extra space before the period in the last sentence.
+
+In regex you can use brackets `( )` to capture patterns and then reference these to match and replace only part of the string.
+
+In the example below:
+
+-   `.` - matches any character
+
+-   `*` - expects that match zero or more times
+
+-   `\s` - means a 'space' character So `.*\s*` means match any character until it matches a zero or more spaces.
+
+-   `$` - matches end of string (not an actual dollar symbol `$`, because `$` has a special meaning like `.` or `*`., you will read about it below)
+
+-   `\.` - matches the literal fullstop symbol `.` (in opposite to the 'regex meaning of fullstop' which would be 'any character'. Just like with \$ above)
+
+**In other words we want something like `.*\s*\$`**
+
+**Explanation of "escaping":**
+
+We use `\` symbol before a character in a regex to 'escape' that character's usual meaning. This might make it special if usually it is normal: `s` normally just means a letter s, but `\s` means 'a space'. And if it usually is special, it will become normal, e.g. fullstop `.` usually has a special meaning of 'any character', but `\.` simply means a fullstop, a dot.
+
+So...
+
+`.*\s*\.$` - matches a sequence of 0 or more characters, followed by zero or more spaces, that then ends with a literal fullstop '.' and then reaches an end of string. So basically... 'the last sentence'.
+
+But when we try to use it in our code things go wrong. That's because we are missing one more step.
+
+```{r}
+sentence <- "some sentence."
+str_extract(sentence, ".*\s*\.\$") 
+# OH NOT WHEN WE RUN THIS WE WILL SEE AN ERROR! it will look a bit like this:
+# Error: '\s' is an unrecognised escape in character string starting ""`.*\s"
+```
+
+OH NO! What's going on? 🔥🔥🔥
+
+**The answer is... DOUBLE ESCAPING?**
+
+Essentially you need to escape things twice, because the regex you wrote is INTERPRETED TWICE - first time by the R language, and then again by the Regex language. So, for the same of R you will need to escape each `\` AGAIN so that it is allowed to be special itself. Do not panic, it will start coming naturally to you. In short each `\` will become `\\` so that R allows our `\` to be special.
+
+**Explanation of what happens in R when you escape string:**
+
+You are writing your regex as a string in R. And strings in R also can have 'special' characters, like new line/enter (`\n`) or tab (`\t`) which R escapes with a `\` to distinguish them with actual letters `n` and `t`. So in R strings the symbol of `\` is very special and meaningful... hence we can also escape it, so actual use a slash `\`. See example below.
+
+```{r}
+# So before you run this code, try to imagine what will get shown on the screen?
+
+cat("bana\nas are yellow, or\t brown\\yellow ") 
+# here we escaped one enter, one tab, and one \! Can you find where?
+```
+
+```{r}
+# notice that we used cat() above, because print will return the string, without INTERPRETTING IT.
+print("bana\nas are yellow, or\t brown\\yellow ") 
+```
+
+**Conclusion: either write of your regex in a simple form, then add slash  before each slash  or just use double slash \\ from the beginning**
+
+Let's make the final step: to double-escape our `.*\s*$` it will become something like`.*\\s$`
+
+```{r}
+# here we show you a sequence of how you are likely to build your regex:
+
+pattern <- ".*\\s*.$"
+str_extract("words.", pattern)
+str_extract("a few words .", pattern)
+str_extract("many words      .", pattern) 
+# notice the same pattern can recognise a number of different sentences
+```
+
+But why is this useful? When you find some patterns you wish to extract from strings. Keep reading.
+
+## Parts of a pattern (brackets)
+
+**Why are brackets useful?**
+
+Because currently we are just told "yes, this whole string matches the pattern", but we might want to extract just parts of the pattern (e.g.. just the first 3 characters of a post-code)
+
+Also... you already realised that complicated Regex can be rather hard to read and decipher. Brackets, which solve a number of our problems in one go.
+
+**Organising code is always useful**
+
+The function of the brackets is to group and organise the matches which are parts of your regex. In our example above we had four parts/groups in our regex: characters, spaces, fullstop and end of the string. With brackets we can start thinking about them as these groups of recognised characters, and each group is assigned a number in the order they appear.
+
+So if we break down `.*\s*.$` into groups as detailed above, which will look like this `(.*)(\s*)(.)($)` then we can say that e.g `(.*)` is group 1, `($)` is group 4. Below you will see how we can access those groups individually - group one will be referred to as `\1`, group 2 as `\2` etc..
+
+**Why is this useful? Because you can recognise patters, and replace them with a 'remix' of that pattern**.
+
+## Using groups to achieve complicated and useful things:
+
+For example: replace all instances of a word with another work, but only if it is at the end of a sentence, or only if it is in between some other words. Or change a format of a phone number or address.
+
+**Here's an example:**
+
+you'd like the replace each instance of phone numbers starting with a 0044 like 00441234567 into a format (UK) 123-4567. What you need to do is first describe the long number as groups of digits `(0044)(\d{3})(\d{4})` - meaning group of two zeros and two fours, followed by three digits and then 4 digits. So we separate our match into 3 groups.
+
+And then you'd like to replace the first group with (UK) and put some spaces and dashes between the other two groups.
+
+```{r}
+old_phone_number <- '00441234567 or 00445555555 and some non-matching ones: 0044 0044-555-5555 0048123456 0441234567 004412X4567 +445555555'
+
+pattern <- "(0044)(\\d{3})(\\d{4})"
+replace_with_this <- "(UK) \\2-\\3" 
+# what does it do? first string (UK) then space, second group, dash, third group
+# notice that because this is an 'output' pattern, brackets do not have a spacial meaning
+
+new_phone_number <- gsub(pattern, replace_with_this, old_phone_number)
+print(new_phone_number)
+```
+
+**Another example, removing spaces before the fullstops and other end of sentence characters:**
+
+In the **gsub** command below we are telling **gsub** to keep only what was captured in the second bracket. Thus removing the extra space before the '.'
+
+```{r brackets}
+#use gsub to remove the space before the period at the end.
+my_sentences <- c(
+  "Hello,  how    are you   today   ?",
+  "I am looking.   forward to fun with NLP   .",
+  "Are you ok?",
+  "Are you ok ?",
+  "Are you ok  ?",
+  "Hello to you too, yes I am   !"
+)
+
+my_sentences_updated <- gsub('(\\s*)([\\.!?])$', '\\2', my_sentences)
+
+# recognise a group of spaces, then one of the symbols ?!. and then end of string
+# then replace them with just the symbol ?!. (delete the spaces which were group \\1)
+
+print(my_sentences_updated)
+```
+
+In the previous coding exercise we used other functions like **str_extract**, **str_replace**. These can also be used in conjunction with regular expressions.
+
+```{r strplusregex}
+my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. What time does it start? It starts at 1pm, do you want to do lunch at 12pm?"
+
+# Extract any number of digits immediately followed by 'pm'
+time1 <- str_extract(my_sentence, "\\d+pm")
+print(time1)
+```
+
+**Another example: Swap first names and surnames**
+
+```{r}
+names_old <- c("Jill Mathews",
+               "Prianka O'Brian",
+               "Pim Ng")
+
+names_new <- gsub('(.*) (.*)', '\\2 \\1', names_old)
+
+# describe with your own words what happens here!
+print(names_new)
+```
+
+[hint for task 00](./hints/hint_2b_pre.Rmd)
+
+## Activity 1:
+
+1)  Can you write a regular expression which capture all places where time is mentioned in my_sentence? For simplicity you could assume time is always pm. (would `str_extract_all` be a good tool to use?)
+
+for future: in your r console on he bottom of the screen type this: `?str_extract_all` it will show you the documentation of a new useful function which expands on *str_extract_all*
+
+```{r}
+my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. What time does it start? It starts at 1pm, do you want to do lunch at 12pm?"
+# write your code here
+```
+
+[hint for task 01](./hints/hint_2b_1.Rmd)
+
+2)  Now change the my_sentence string, so that the class starts at 1:30pm (instead of 1pm) with str_replace? (no need to use regex here yet, unless you want to). Put the result back into the variable my_sentence.
+
+```{r }
+my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. What time does it start? It starts at 1pm, do you want to do lunch at 12pm?"
+
+# write your code here
+```
+
+[hint for task 02](./hints/hint_2b_2.Rmd)
+
+3)  Let's come back to using regex: You know how to capture time on the simple 1pm format. But how would you capture time in this new format e.g.. 1:30pm? And then how would you write a regex which could capture time in EITHER one of the formats? 1pm and 1:30pm? Regex has an OR operator for which you use the 'pipe symbol' which looks like this `|` so you can say `a|b` meaning `a` or `b` 
+
+```{r }
+my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. What time does it start? It starts at 1:30pm, do you want to do lunch at 12pm?"
+
+# write your code here
+```
+
+[hint for task 03](./hints/hint_2b_3.Rmd)
+
+
+## Activity 2:
+
+Patterns extraction: Next imagine we want to capture all the birthdays in a piece of text. For simplicity let's assume birthdays are always in a format like 23-03-1987 or 30-06-2002. Below you are given some text to test your Regex on.
+
+To keep it simple, for now let's say that dates can be any combination of two-two-four digits (the dates do not need to be actual real dates), so 31-02-2000 is fine, and so is 45-67-8901 and 00-00-0000
+
+1)  Can you write a regex to extract the one birthday in the sentence below?
+
+```{r }
+sentrence_with_birthday <- "Natasha Smyth was born on 30-01-1999 and loves NLP."
+
+# write your code here
+```
+
+[hint for task 04](./hints/hint_2b_4.Rmd)
+
+5)  What if there was more than one birthday in the string? Here you are given another sentence - add your own birthday at the end of it, and then write code which will extract all four birthdays using a regular expression.
+
+```{r }
+sentrence_with_many_birthdays <- "Natasha Smyth was born on 30-01-1999 and loves NLP. Her friend Pat was born on 02-01-2000 and their friend Kat was born on 13-11-1997. And your birthday is ...?"
+
+# write your code here
+```
+
+[hint for task 05](./hints/hint_2b_5.Rmd)
+
+# Extra task for the curious (write down what time it is. Do not spend over 10 minutes on this for now.)
+
+Given below string, identify in it all possible room numbers in the a hospital. You know that the room number always starts with a Letter for the floor ('B','F','S','T') then a dot '.', followed the number of the room on that floor which is a number made of 1,2 or 3 digits (e.g., 3,12,133) finally a letter which indicates if the room is used for Teaching (T), Admin (A), Research (R) or Patient-related tasks (P). So example room names could be: B.21R is a room 21 on basement floor used for research, S.111P is a room 111 on second floor used for seeing patients. Inappropriate room number would use other letters (or miss them) at the beginning or end, and would have no digits or more than 3 digits.
+
+Try to first get the most simple cases to work, and only then engage with more difficult situations
+
+```{r }
+string_with_some_rooms <- "potential room names are: A_23 A.1223 B-1 B.1 B.1X B.12P B.12 T.T T.T123 .12A 12A T.333T T.333A A.333A and that's all of them"
+# hint: before you start writing code, first decide by hand which of the above are correct room numbers following the above key? for example, would you agree that correct room names are "B.12P T.333T T.333A"
+
+# always make a change -> run your code -> see what is still missing -> repeat
+
+# write your code here
+
+```
+
+[first hint for task 06 - how to think about this task](./hints/hint_2b_6.Rmd)
+
+[second hint for task 07 - how to start coding this task](./hints/hint_2b_7.Rmd)
+
+## Note for later:
+
+At the end of the course come back to this badge. Regex is a huge and fascinating topic and there are lots of useful mechanisms for recognising complicated patters, or context around the words. While we will not show them all in this badge, you will likely at some point have to learn them by yourself.
+
+Here's one advanced example: For example, How would you find words that have a given symbol just before them, or after them, but without including that symbol in your find? For example if you want to find all numbers describing minutes in text (like 25mins, 10mins, 60mins) but you only want to grab those numbers (25,10,60) without the 'mins' part? You would use a "Lookahead" which checks for things AFTER what you care about: '\\d+(?=mins)' means one or more numbers followed by a string "mins". The syntax of lookahead is (?=abc) which means that your match is followed by abc. There is also a look-back (?\<=abc) - do you see now how we've just scratched the surface?
+
+We hope you will keep coming back to Regex, and keep discovering how fun it can be.
+
+[example of how you could fix some tricky room names from the task above](./hints/hint_2b_8.Rmd)
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.
+
+# Conclusion:
+
+Regular expressions take time and patience to learn and like most things in R there are different way to achieve the same thing.
+
+We have used on a number of ways in this exercise to find and change strings in our data with regular expressions and R functions. Next week we will use these functions again when cleaning and reprocessing our data.
+
+# Further reading:
+
+[Stringr documentation is really worth a look if you'd like to understand how Regex works](https://cran.r-project.org/web/packages/stringr/vignettes/regular-expressions.html#matching-multiple-characters)

@@ -1,0 +1,4 @@
+```{r}
+ #unest the tokens to sentences, strip punctuation and lower case
+text_tb %>% unnest_tokens(sentence, text, token="sentences", to_lower = TRUE, strip_punct = TRUE)
+```

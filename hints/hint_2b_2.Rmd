@@ -1,0 +1,9 @@
+1)  Change the my_sentence string, so that the class starts at 1:30pm (instead of 1pm) with str_replace? Put the result back into the variable my_sentence.
+
+```{r }
+my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. What time does it start? It starts at 1pm, do you want to do lunch at 12pm?"
+my_sentence <- str_replace(my_sentence, "1pm", "1:30pm")
+my_sentence
+```
+
+

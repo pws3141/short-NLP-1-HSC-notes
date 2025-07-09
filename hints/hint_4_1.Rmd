@@ -1,0 +1,4 @@
+```{r replace_yearANSWER}
+my_digits<-gsub('^\\d+\\s|\\s\\d+\\s|\\d+$', ' DIGIT ', my_digits) 
+print(my_digits) 
+```

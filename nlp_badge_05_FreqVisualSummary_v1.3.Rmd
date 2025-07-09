@@ -1,0 +1,440 @@
+---
+title: "Badge 5 - Word Frequency, Summarising and Visualising your data"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Word Frequency, Summarising and Visualising your data
+
+Let's load some libraries we will need. Since there will be quite a few, We'll introduce you to a really lovely package called `Pacman`. It will 'munch through' a list of packages and make sure they are installed, and updates and then load them.
+
+So basically, less of that `install.packages(package_name)` and `library(package_name)` stuff.
+
+WHEN YOU RUN THE CODE BELOW YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
+
+```{r, include=FALSE}
+install.packages("pacman")
+pacman::p_load(stringr, tibble, ggraph, ggplot2, readr, dplyr, tidyverse, tidytext, purrr)
+```
+
+## First: Let's load some data
+
+We will convert our data to a tibble format to work with this in `tidytext` this converts the data to a tibble format and separates each row of the dataframe word by word
+
+```{r loaddata}
+#Load the csv to a datframe
+file_path <-  './data/CORONA_TWEETS.csv'
+Corona_NLP_DF <- read.csv(file_path)
+
+#Converting into the tibble dataframe
+mydata_TB <- as_tibble(Corona_NLP_DF) 
+```
+
+## Term Frequency
+
+We are going to look at the frequency of words in our Corona corpus.
+
+What are the most commonly used words in our data?\
+We use the `tidytext` package to tokenise to words (unnest \_tokens function you saw in the previous badge) and we count the tokens.
+
+This gives us a tibble table with the word in one column and the count in a column labelled `'n'`
+
+```{r count_freq}
+mydata_word_counts <- mydata_TB %>% 
+  unnest_tokens(output = word, input= text) %>%
+  count(word, sort = TRUE) 
+
+#see the output table
+mydata_word_counts 
+```
+
+```{r count_freq}
+#same again but this time using the group_by to group by Location column value
+mydata_words_byLocation <- mydata_TB %>%
+    group_by(Location) %>%
+    unnest_tokens(output = word, input= text) %>%
+    count(word, sort = TRUE) 
+
+#see the output table
+mydata_words_byLocation
+```
+
+## Putting Word Counts into Graphs
+
+We can use ggplot to graph our word counts.
+
+Here we filter to limit the words being shown otherwise the volume of words with low numbers would be overwhelming.
+
+```{r graph_counts}
+mydata_word_counts %>%
+  filter(n > 350) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+```
+
+and then
+
+```{r graph_counts}
+# Graph the top 15 most common words in each Location
+mydata_TB %>% 
+  group_by(Location) %>%
+  unnest_tokens(word, text) %>%
+  count(word, sort = TRUE) %>%
+  top_n(15) %>%
+  ungroup() %>%
+  mutate(Location = factor(Location),
+         text_order = nrow(.):1) %>%
+  ggplot(aes(reorder(word, text_order), n, fill = Location)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ Location, scales = "free_y") +
+  labs(x = "NULL", y = "Word Frequency by Location") +
+  coord_flip() +
+  theme(legend.position="none")
+```
+
+Here we see the most frequent words are words that likely hold no value for understanding of the text. What we called stop words in last weeks badge. (a, the, in , an)
+
+We can use the built in options of `tidyverse` to remove the stop words. `anti_join` is the function and we give it an input of `stop_words`.
+
+Run the code and see the difference in the frequent words compared to the graph above.
+
+```{r graph_withstopremoved}
+
+# Graph the top 15 most common words in each Location without stopwords
+mydata_TB %>% 
+  group_by(Location) %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words) %>% 
+  count(word, sort = TRUE) %>%
+  top_n(20) %>%
+  ungroup() %>%
+  mutate(Location = factor(Location),
+         text_order = nrow(.):1) %>%
+  ggplot(aes(reorder(word, text_order), n, fill = Location)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ Location, scales = "free_y") +
+  labs(x = "NULL", y = "Word Frequency by Location") +
+  coord_flip() +
+  theme(legend.position="none")
+```
+
+## ACTIVITY: Using your own 'excluded words'
+
+Can you create your own word list you want to remove? Hint: fight after you remove stopwords, use `filter()` to specify in what situation you'd like to filter words out. Use your own collection of words that you do not think of as meaningful in this example.
+
+As your solution, copy the code above, and add an extra line after `anti_join(stop_words) %>%`.
+
+**But wait! What does filter() do again?** To find our more about it, in console write `help(filter)` then select the `dplyr` packages and then select `filter` to see options. But also, below we left you two hints, if you have not used `filter()` before. (It's OK if you did not).
+
+```{r}
+# your solution here
+```
+
+[Hint 1 about the filter() - how does it work](./hints/hint_5_1.Rmd) [Hint 2 about the filter() - how to use it with collections](./hints/hint_5_2.Rmd)
+
+Ok now you should be equipped to solve the task.
+
+[A solution (but first have a try by yourself)](./hints/hint_5_3.Rmd)
+
+## For completenes: another way to remove unwanted words:
+
+You can also extend the usual set of `stopwords` which one always removes like "and", "or", "the", etc. And add there words that are in your data (eg. 'http' in this dataset), so that it gets removed at the same time that the `stopwords` are removed. See ecample below:
+
+```{r}
+
+#Create custom stop word list
+stop_words_expanded <- data.frame(word = c("https", "t.co"), lexicon = "custom") %>%
+  rbind(stop_words)
+#above: create a dataframe with your own stopwords, and right-bind to it (add to it) to the usual stop_words. Then use that new stopwords variable. Notice use of Pipe!
+
+mydata_TB %>% 
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words_expanded) %>% 
+  count(word, sort = TRUE) %>%
+  top_n(30) 
+
+# mini-activity: out of curiousity, add a few more words to this exclusion list, to keep the first results even more relevant (eg. data is obviously about covid_19 so maybe covid words can be removed?) 
+```
+
+## TF-IDF (a product of 'Term Frequency' and 'Inverse Document Frequency')
+
+TF-IDF method helps to find important words for the content of each document by decreasing the weight of commonly used words and increasing the weight of words that are rarely used. It attempts to find words that are important in a text (common themes) but not too common (e.g. to, the, a)
+
+To calculate `tf-idf` we first need to get the word or term frequencies (which we did above), the `total words` in the corpus and then we then use the `bind_tf_idf` function from `tidytext` which will calculate the TF_IDF weights
+
+```{r tfidf}
+mydata_word_freq <- mydata_TB %>%
+  unnest_tokens(
+    output = word,
+    input = text,
+    to_lower = TRUE,
+    strip_punc = TRUE
+  ) %>%
+  anti_join(stop_words) %>%
+  count(Location, word, sort = TRUE)
+
+mydata_word_freq %>%
+  bind_tf_idf(word, Location, n) %>%
+  arrange(desc(tf_idf))
+```
+
+## WordClouds
+
+Let's load the libraries we need:
+
+```{r}
+#Load the required libraries (this is a simpler version, but you can use the fancy one from above)
+install.packages("pacman")
+pacman::p_load(wordcloud, wordcloud2, RColorBrewer)
+```
+
+**Creating a Word Cloud**
+
+Word clouds are great quick visualisation tools. They present text data in a simple and format where the size of the words depends on their respective frequencies. They are a quick way to understand and capture the conversation or report on customer reviews (often see them used in online conferences where people share their thoughts on a form).
+
+They can stimulate us to think on what and how we want to analyse the data.
+
+```{r wordcloud}
+#this counts the words in the text column removing stop words
+cloud_words <-  mydata_TB %>%
+  select(text) %>%
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words)
+
+#This sorts (orders) the counts of the words
+words <- cloud_words %>% count(word, sort=TRUE)
+print(words)
+```
+
+Now that we have words, let's feed them into the wordcloud:
+
+```{r wordcloud}
+set.seed(1234) # see note below abotu seeds. Run this a few times with this line, and a few more times with this line commented out. What changes?
+
+#Now lets draw the word cloud
+wordcloud(
+  words = words$word,
+  freq = words$n,
+  min.freq = 50,
+  max.words = 200,
+  random.order = FALSE,
+  rot.per = 0.35,
+  colors = brewer.pal(8, "Dark2")
+)
+```
+
+**What is a seed? (Simplified 'Computer Science' explanation)**. When you generate a wordcloud, you leave a lot of things to random chance, like position of words. This means that each time you generate a wordcloud it will look a little different. But sometimes, for reproducibility, you want to stop randomness, and you can achieve that by giving the computer your own 'seed of randomnes'. It is a very specific number, that will force the 'random' elements, to always be the same. For the curious: If you do not plant a concrete seed, the library will pick one for you (e.g. current date as a millisecond), so each time you generate a wordcloud it will be slightly different.
+
+If you do not specify the seed consistency if you want to produce exactly the same word cloud next time you run this. Try to commend out the line with the seed above, and re-generate the wordcloud a few times - do you see them being different each time? In general Seeds are great when you are building and debugging, it means that you fully control what is going on in your graph.
+
+**But how is wordcloud made?**
+
+The `wordcloud` package uses base R plotting capabilities and calculates the width and the height of the word to create a bounding box of space occupied by the word. The algorithm then places words based on this definition of occupied space. The `wordcloud2` uses a method that defines which pixels are occupied by a word rather than the bounding box occupied by the whole word. This allows for more creativity.
+
+## ACTIVITY: Wordcloud of bi-grams (common two word combinations)
+
+Can you repeat this for ngrams of 2, rather than just single words? Look through this and previous notebooks, to remind yourself how ngrams are created. Also can you change the shape of the word cloud or the colors. Use `help(wordcloud2)` in console to see you available options.
+
+```{r}
+# write your code here
+```
+
+Only if you've already tried for 5+ minutes, you can see below for some hints. But please use the help function to see other options. It's also worth googling on R wordclouds to see examples
+
+[Answer](./hints/hint_5_4.Rmd)
+
+## Word Co-occurance
+
+Visualising the relationships between words as opposed to just frequencies can be helpful. One way to do this is using network graphs. A graph represents a combination of connected nodes where the nodes in this case are our words and the weight is how 'much' these words are connected. The graph is a visual representation of the word occurrence table we talked about on the slides
+
+The weight is represented by a line on the graph (or edge) between two words and the darker or thicker the line the stronger the relationship.
+
+The lines (edges) between the words can have direction also.
+
+We are going to use `tidytext` and the `ggraph` package to visualise these connections
+
+```{r}
+library(igraph)
+```
+
+
+```{r igraph}
+
+#we want to create bigrams but remove stop words.  First, we create bigrams
+mydata_words_bigrams <- mydata_TB %>%
+  unnest_tokens(
+    output = ngram,
+    input = text,
+    token = "ngrams",
+    n = 2
+  ) 
+
+#This uses the anti_join to look at each word in the bigram and remove if it contains a stop words
+mydata_words_bigrams <- mydata_words_bigrams %>%
+  separate(ngram, into = c("first","second"),
+           sep = " ", remove = FALSE) %>%
+  anti_join(stop_words,
+            by = c("first" = "word")) %>%
+  anti_join(stop_words,
+            by = c("second" = "word")) %>%
+  count(ngram, sort = TRUE) 
+
+
+# filter for only relatively common combinations
+bigram_graph <- mydata_words_bigrams %>%
+  filter(n > 20) %>%
+  graph_from_data_frame()
+
+#Show the word co-occurances: these are words happening immediately next to each other frequently:
+bigram_graph
+```
+
+## Visual connections of Words
+
+Visualising relationships among words simultaneously, rather than just the frequencies can be useful. We arrange the words into a network, or “graph.” Here “graph” means a combination of connected nodes. It has three variables:
+
+`from:` the node an edge is coming from
+
+`to:` the node an edge is going towards
+
+`weight:` A numeric value associated with each edge (how many times the words at the node appear together)
+
+In the example below we create a custom stop word list, we then count bigrams and remove stop words in the bigrams. We then create the bigram_graph mapping needed for nodes and edges. Then we show two possible graph outputs. There are many options when creating these types of graphs. Its worth reading some of the help pages and vignettes to understand these commands.
+
+We'll split it for you into a few stages, so you can see what's going on:
+```{r }
+library(ggraph)
+set.seed(2020)
+#Create custom stop word list
+final_stop <- data.frame(
+  word = c("https", "t.co", "n"), 
+  lexicon ="custom") %>%
+  rbind(stop_words) #adds custom words to stop list
+
+#Create and count bigrams
+mydata_words_bigrams <- mydata_TB %>%
+  unnest_tokens(bigram, text, 
+                token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"),
+           sep = " ") %>%
+  filter(!word1 %in% final_stop$word) %>% #uses the combined preset and custom list
+  filter(!word2 %in% final_stop$word)
+
+mydata_words_bigrams
+# below in the data output, scroll to the right with > arrow, to see what are values for word1 and word2
+```
+OK so now we have our bigrams, it's time to graph them:
+
+```{r ggraph}
+
+mydata_words_bigrams_ct <- mydata_words_bigrams %>%
+  dplyr::count(word1, word2, sort = TRUE)
+
+head(mydata_words_bigrams_ct, 20)
+
+#Create the bigram_graph
+bigram_graph <- mydata_words_bigrams_ct %>%
+  filter(n > 20) %>%
+  graph_from_data_frame()
+
+#Show the graph edges (for now just the data, picture coming soon)
+bigram_graph
+```
+## Finally... cherry on the cake: the visual graph depicting word colocations. 
+
+**Notice the direction of arrows!**
+
+```{r ggraph}
+#First graph option
+ggraph(bigram_graph, layout = "fr") + #use the fr layout algorithm
+  geom_edge_link() + 
+  geom_node_point() + 
+  geom_node_text(aes(label = name),
+                 repel = TRUE) + #use repel so the words do not overlap
+  theme_void() #void theme
+
+
+#the above row determines the lay the arrows will look
+#check out ?arrow for more information
+arrows_info <- grid::arrow(type = "closed", length = unit(.2, "cm"))
+
+#Second Graph option
+ggraph(bigram_graph, layout = "fr") + #use the fr layout
+  geom_edge_link(aes(edge_alpha = n), #vary the edge color by n
+                 #darker lines are bigrams that occur more often
+                 arrow = arrows_info, #add the arrow information
+  ) +
+  geom_node_point(size = 2,color = "lightblue") + #makes the geom slightly larger
+  geom_node_text(aes(label = name), #adds text labels for the nodes
+                 repel = TRUE) +
+  theme_void() #void theme
+
+```
+Note for the curious: do you see that following those arrows can be used for basic "auto prediction of text"? You could start assembling longer and longer common phrases by following arrows directions e.g. :"local -> grocery -> store -> shelves" or "covid -> 19 -> outbreak"
+
+## Summary of Characteristics of Your Data
+
+Below we give an example of how to find some of the summary properties of our data that we discussed in the video.
+
+```{r summary}
+text_data <- c("The sleek cat jumps over the lazy dog.",
+               "R is a great great great language.", 
+               "Natural Language Processing is a complex field. Oh yeah!") 
+
+#Tokenize the text
+tokenized_text <- unnest_tokens(tbl = data.frame(text = text_data), output = word, input = text) 
+
+#Document lengths (in this case our sentence).  Here we are using the space between words to create document lengths.  You could use unnest again and count the total number of words per document.
+doc_lengths <- sapply(strsplit(text_data, "\\s+"), length)
+
+print(doc_lengths) 
+# words:
+```
+and then:
+```{r }
+
+#number of characters in our documents
+char_lengths <- sapply(text_data, nchar) 
+print(char_lengths) 
+# characters
+```
+and then:
+```{r }
+#Here we are calculating lexical diversity again just using space between words to understand the documents words.
+lexical_diversity <- sapply(strsplit(text_data, "\\s+"), function(words) { length(unique(words)) / length(words) }) 
+
+print(lexical_diversity) 
+# lexical complexity (why is the middle sentence less fomplex?)
+```
+and then:
+```{r }
+
+# Filter out stopwords 
+non_stop_words <- tokenized_text %>%
+  anti_join(stop_words) 
+
+# Count the total number of stopwords 
+total_stopwords <- nrow(tokenized_text) - nrow(non_stop_words) 
+percentage_stopwords <- total_stopwords / nrow(tokenized_text) * 100 
+
+print(percentage_stopwords) 
+# precentage stopwords: (in the whole set)
+```
+and then:
+
+```{r }
+# Split text into sentences and count the number of words in each sentence 
+sentence_counts <- strsplit(text_data, "[!?\\.]+") %>% lengths() 
+print(sentence_counts) 
+```
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.
+
+# Conclusion:
+
+You've now see a number of practical ways of visualising your text data. Notice how most of the time the process involves identifying 'messy' parts of the dataset, and cleaning them up before the visualisation makes sense. Visualisations are often just a way to get some insight before you continue with further analysis.

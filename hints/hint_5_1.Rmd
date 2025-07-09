@@ -1,0 +1,5 @@
+```{r}
+# hint: filter() performs an operation on values of columns. If it returns false, the row is removed.
+data.frame(number = 1:3, fruit = c("banana","kiwi","pears")) %>% 
+  filter((nchar(fruit) > 4)) 
+```

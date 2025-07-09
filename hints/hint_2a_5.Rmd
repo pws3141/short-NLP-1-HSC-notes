@@ -1,0 +1,9 @@
+5) Add another string to say 'I will come visit on Sunday and bring Pippa
+treats.'
+
+```{r}
+strings4concat<-c('Hello, how are you today?','I am fine, and you?', 'It is terrible weather we have had is it not?', 'I know my cat, Mielo is so miserable. She does not want to go out.')
+
+mynewstring<-paste(concatstring, 'I will come visit on Sunday and bring Pippa treats.', sep=" ")
+print(mynewstring)
+```

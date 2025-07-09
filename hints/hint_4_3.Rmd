@@ -1,0 +1,17 @@
+```{r}
+my_string <-c("I won't be at class tonight as I can't find my car keys. Please don't forget to tell the teacher I'm sorry, I don't want her to think I've forgotten about it. You'll remember to tell her, won't you? I'll see you tommorrow.")
+
+# this solution is a mix of "one scenario" regex replacements like 'I\'m' to 'I am'
+# and more universal replacements like'n\'t' to 'n not' or '\'ve' to ' have'
+my_string <- gsub('we\'re', 'we are', my_string, perl=TRUE)
+my_string <- gsub('won\'t', 'will not', my_string, perl=TRUE)
+my_string <- gsub('don\'t', 'do not', my_string, perl=TRUE)
+my_string <- gsub('n\'t', 'n not', my_string, perl=TRUE)
+my_string <- gsub('I\'m', 'I am', my_string, perl=TRUE)
+my_string <- gsub('\'ve', ' have', my_string, perl=TRUE)
+my_string <- gsub('\'ll', ' will', my_string, perl=TRUE)
+
+print(my_string)
+
+# not for faint hearted: do you think you could simplify some of this process, but without breaking anything? I find it tricky
+```

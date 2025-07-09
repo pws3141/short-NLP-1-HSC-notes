@@ -1,0 +1,8 @@
+Note: this code will not work here, in the hint space. You need to copy-it over to your notebook. That's because it depends on the data file being in a specific place
+
+```{r}
+Corona_DF <- read.csv("data/CORONA_TWEETS.csv" )
+names(Corona_DF) <- c("id", "my_text_data", "name", "Location", "Date", "Sentiment")
+Corona_DF_UK <- subset(Corona_DF, Location = "UK") 
+write.csv(Corona_DF_UK$my_text_data, file="my_corona_activity1.csv")
+```

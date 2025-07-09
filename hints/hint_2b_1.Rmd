@@ -1,0 +1,10 @@
+1) Can you write a regular expression which capture all places where time is mentioned in my_sentence? For simplicity you could assume time is always pm
+
+```{r }
+my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. What time does it start? It starts at 1pm, do you want to do lunch at 12pm?"
+# write your code here
+
+times <- str_extract_all(my_sentence, "\\d+pm")
+print(times)
+```
+

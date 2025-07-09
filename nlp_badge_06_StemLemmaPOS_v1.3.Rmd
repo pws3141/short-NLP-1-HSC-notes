@@ -1,0 +1,255 @@
+---
+title: "Badge 2-6 Stems,lemmas, Pos tags"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Stems,lemmas, Part of Speach (PoS) tags
+
+## Getting packages and allowing the, to automatically download useful files which will help.
+
+This is quite new: some packages need quite large files to work well. When you run the code below, it might take a while (say... a minute). That's because `textstem` will be downloading some files it needs to function properly.
+
+About half way down the notebook there will be another moment like that, around **"We start by downloading a language model"**. But there it will take more like 5 minutes to download the file. Oh well... at least you only need to do this once ever!
+
+
+WHEN YOU RUN THE CODE BELOW YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
+
+```{r load_library}
+# for all packages we need:
+install.packages("pacman")
+pacman::p_load(dplyr, stringr, udpipe, lattice, tidytext, readr, SnowballC, textstem)
+```
+
+Let's get right to work. We'll start by loading the data:
+
+```{r loaddata}
+#Load the csv to a dataframe
+
+file_path='./data/CORONA_TWEETS.csv'
+Corona_NLP_DF <- read.csv(file_path)
+
+#Converting into the tibble dataframe
+mydata_TB <- as_tibble(Corona_NLP_DF) 
+```
+
+## Stemming
+
+From the video you already know what Stem is, and why it is important. Now let's look at the code to make use it stems.
+
+We will use the `SnowballC` package to carry out stemming. We will tokenise our text column to words and apply the stemmer `wordStem`. Have a look at the tibble it produces and compare the word and stem columns.
+
+You can see more options using the `help(wordStem)`. For example you can change the language and call different stemmers.
+
+```{r stemming}
+library(SnowballC)
+
+mydata_TB %>%
+  unnest_tokens(output = word, input= text) %>%
+  mutate(stem = wordStem(word)) 
+
+# have a look at the first few pages of the result below (especially the word and stem columns). Are any of them surprising? Why do you think they are this way? Would you have stemmed them differently?
+```
+
+And here's an example of applying stems to a simple string. Notice that since stemming can be applied to individual words, we will have to split the string into words, then get the stems, then stitch the sentence back together. It's a bit crude, but will show what we can do with stems. Below is a slightly simpler example waiting.
+
+```{r}
+my_text_about_cats <- c("My cat is tired today. She is sleeping on her mat in the sun. She is dreaming about running and eating now. She usually wakes when she is hungry.")
+
+stems <- my_text_about_cats %>%
+  strsplit("\\s+") %>%
+  unlist() %>%
+  wordStem() %>%
+  paste(collapse = " ")
+
+stems
+```
+
+Wouldn't it be nice if the library could do the splitting into words for us? Of course! Indeed, this is R, so obviously there is a function for that! Indeed there are two functions we can use here: `stem_words()` and `stem_strings()`
+
+Notice an important difference between those two methods:
+- `stem_words()` expects a vector of words, and will find stem in each item in that vector. So you usually have to do the work of preparing the data, but also you have more control over the result.
+
+```{r}
+c("She", "is", "dreaming", "about", "running", "and", "eating", "now") %>% 
+  stem_words()
+```
+
+- `stem_strings()` is more forgiving, as it expects whole strings (e.g. sentences) and will stem each word in each of those sentences. But the result is a sentence, which gives you less fine control.
+
+```{r}
+my_text_about_cats %>% 
+  stem_strings()
+```
+
+## Lemmatisation
+
+Also from the video you know what Lemmas are. But now let's see them in code.
+
+Here we use the `textstem` package to produce lemmas. (This package will also do stemming). Just like with above examples there are two functions we'll use: one expects vector os words, and one vector of more complex strings (which it will split into words by itself).
+
+Below are some interesting examples: 
+
+```{r Lemmas}
+# btw. deending on your R environment, you might need a syuzhet package
+if (!require("syuzhet")){
+  install.packages('syuzhet')
+}
+library(syuzhet)
+
+library(textstem)
+vector <- c("run", "ran", "running", "walked", "walks", "walking")
+lemmatize_words(vector) # takes collection of words!
+```
+Luckily for us, lemmatize_strings can be applied to whole sentences (and will get the lemmas of each individual words by itself).
+
+```{r Lemmas}
+my_text_about_cats <- c("My cat is tired today. She is sleeping on her mat in the sun. She is dreaming about running and eating now. She usually wakes when she is hungry.")
+
+lemmatize_strings(my_text_about_cats) # takes whole sentences (and can take many)
+```
+
+Question to ponder: what would happen if you put a whole sentence in `lemmatize_words`? and why? 
+
+## ACTIVITY: Stems vs. Lemmas
+
+Try using this package to do stemming and compare to the results from above. Bring bits of code that take whole string from above and reduce it to stems and lemmas. Compare their differences. What do you see? Does it make sense in context of the video you've seen?  
+
+```{r}
+my_text_about_cats <- c("My cat is tired today. She is sleeping on her mat in the sun. She is dreaming about running and eating now. She usually wakes when she is hungry.")
+
+# bring pieces of code from above here. One that will turn in into lemmas, one which will turn it into stems. What differences in output do you see?  
+```
+
+
+```{r}
+my_text_about_cats <- c("My cat is tired today. She is sleeping on her mat in the sun. She is dreaming about running and eating now. She usually wakes when she is hungry.")
+
+#  your code here
+```
+[Hint: Example code](./hints/hint_6_1.Rmd)
+
+Come back to this later: To understand this better, you can have a look at the help function for the functions and you will see you can call different dictionaries and lexicons to support stemming and lemmas and these change the results you get.
+
+## Part of Speech Tagging
+
+There are many different POS tagging tools available in R. We will use `UDPipe` but you may also want to look at the R implementation of `openNLP`. UDPipe also does lemmatisation and dependency parsing.
+
+To use UDPipe you need to use a language model.
+
+We start with downloading a language model in English. `UDPipe` will work in other languages.
+
+We then create data from our Corona tweets that we want to POS tag.
+
+Next we are going to "annotate" that data with POS tags.
+
+UDPipe produces to types of POS tags `upos` and `xpos`. `upos` is universal part of speech tagging and `xpos` is language specific
+
+
+## Brace brace! Big long download ahead (about 5 minutes)
+
+
+```{r POS}
+
+#We start by downloading a language model
+
+model_eng_ewt   <- udpipe_download_model(language = "english-ewt")
+model_eng_ewt_path <- model_eng_ewt$file_model
+
+#To load our downloaded model, use the udpipe_load_model() function:
+
+model_eng_ewt_loaded <- udpipe_load_model(file = model_eng_ewt_path)
+
+#Creating a text variable 
+text <- Corona_NLP_DF$text %>% str_squish()
+
+#Annotate data - this may take a moment
+text_annotated <- udpipe_annotate(model_eng_ewt_loaded, x = text) %>%
+      as.data.frame() 
+    
+#look at text_annotated - look at the extra columns upos and xpos give you the POS tags, 
+view(text_annotated)
+ 
+```
+
+
+We can now access the text_annotated data frame to graph the frequencies of POS tags and look at the highest occurring types. We do this for nouns and adjectives.
+
+
+```{r Frequency}
+# Now you can display the most popular parts of speech:
+txt_freq(text_annotated$xpos)
+```
+
+## Pre-Activity: Visualising Parts of Speech Tagging
+
+First read the code below. What does it do? Once you understand it enough there is a task waiting for you below, where you will have to change it:
+
+```{r POS_stats}
+#Look at the frequency of the POS tags
+freq <- txt_freq(text_annotated$xpos)
+print(freq)
+```
+
+and now let's visualise that data:
+
+```{r POS_stats}
+#Create a barcharts to look at the frequencies of upos types of POS tags
+freq.distribution.upos <-
+  txt_freq(text_annotated$upos)
+
+freq.distribution.upos$key <-
+  factor(freq.distribution.upos$key,
+         levels = rev(freq.distribution.upos$key))
+
+barchart(
+  key ~ freq,
+  data = freq.distribution.upos,
+  col = "dodgerblue",
+  main = "UPOS frequencies",
+  xlab = "Freq"
+)
+
+## NOUNS
+nouns <- subset(text_annotated, upos %in% c("NOUN")) 
+nouns <- txt_freq(nouns$token)
+
+nouns$key <- factor(nouns$key, levels =
+                      rev(nouns$key))
+
+barchart(key ~ freq, data = head(freq, 20), 
+         col ="cadetblue", 
+         main = "Most occurring nouns", 
+         xlab = "Freq")
+
+## ADJECTIVES
+adj <- subset(text_annotated, upos %in% c("ADJ"))
+
+adj <- txt_freq(adj$token)
+
+adj$key <- factor(adj$key, levels = rev(adj$key))
+
+barchart(key ~ freq, data = head(freq, 20), 
+         col = "purple",
+         main = "Most occurring adjectives", 
+         xlab ="Freq")
+
+
+```
+## Activity: Playing with Visualising Parts of Speech Tagging
+
+
+Now it's your turn. Copy-paste the code abovem and make changes to it: Add another type of POS tag in the code - copy the block for NOUN or ADJECTIVE and replace the POS tag type for another POS tag type.
+
+```{r}
+# code can come here
+```
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.
+
+# Conclusion:
+
+Now you've seen using Lemmas, Stems and POS in action. It will open a whole new world of practical NLP.

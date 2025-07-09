@@ -1,0 +1,11 @@
+```{r}
+names_old<-c("Jill Mathews",
+             "Prianka O'Brian",
+             "Pim Ng")
+
+names_new<-gsub('(.*) (.*)','\\2 \\1', names_old)
+
+# recognise group of characters (\\1) followed by space, then followed by group of characters (\\2)
+# then replace it with the groups in opposite order, separated by space '\\2 \\1'
+print(names_new)
+```

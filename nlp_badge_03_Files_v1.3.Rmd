@@ -1,0 +1,187 @@
+---
+title: "Badge 3"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Simple ways to load text files into R
+
+**Key Points:**
+
+-   Open and read a csv file containing text
+-   How to access a files contents once it is loaded.
+-   Looking at data in a dataframe and a tibble.
+
+```{r}
+# first some imports:
+if (!require(readr)){
+  install("readr")
+}
+if (!require(dplyr)){
+  install("dplyr")
+}
+library(readr)
+library(dplyr)
+```
+
+## A note about navigating around folders and files:
+
+**WHERE AM I? (a note about the current 'working directory', so the folder in which you 'are')**
+
+When we use files we need to point to them, e.g.. go into folder X, then inside of it into a folder Z. But computer needs to know 'Where do we start from', like a "you are here 📍" pin on the map.
+
+Not in this badge, but in your future work, you may want to use the following commands to get `getwd()` and set `setwd("SOME_DIRECTORY")` your current working directory. More about this later.
+
+## Loading files:
+
+Let's start my loading a CSV file. We are going to use the read_csv function from the readr package. Use help(read_csv) to see further option.
+
+We are going to use the Corona tweet file we discussed in the slides. This loads our data into a dataframe. Each piece of data is in a row with our variables in columns.
+
+```{r}
+library(readr)
+library(dplyr)
+#Load the csv to a dataframe and view the data
+Corona_DF <- read.csv("data/CORONA_TWEETS.csv")
+# see the top of the dataframe
+glimpse(Corona_DF)
+```
+
+There are a number of different functions that can be used to view your data and find information.
+
+-   `head()` - shows the number of rows specified to run head(Corona_DF)
+
+-   `glimpse()` - comes from dplyr and allows a quick look at your data
+
+-   `dim()` - tells you the dimensions of your data
+
+-   `names()` - can be used to list the column names
+
+-   `str()` - can tell you about the column
+
+-   `summary(Corona_DF)` - gives you a summary of the variables( length, class, mode, Mean, Max and Quartiles where appropriate)
+
+## Activity:
+
+Use these functions to explore your data.
+
+```{r}
+#Use each of the functions mentioned above to explore your data e.g. names(Corona_DF). What do you see in it? What perspective on the data each of the functions give you?
+
+# we'll get you started with glimpse. below write code which uses other functions in the same way
+glimpse(Corona_DF) 
+
+```
+
+The file, was loaded with 3798 rows and 6 columns, is now stored in the Corona_DF variable. This loads the data with default settings, and R tries to guess what type of data you have, but sometimes it doesn't do well. So it's a good idea to specify some things.
+
+In the next command we specify that strings should not be treated as factors and the separator is a ','
+
+```{r}
+# Use the same command we had above to read the data in but this time set stringsAsFactors to TRUE  
+# Does this make any difference in the data? (stringsAsFactors is FALSE by default, so if you do not specify it at all, it will assume stringsAsFactors=FALSE)
+
+Corona_DF <- read.csv("data/CORONA_TWEETS.csv",  stringsAsFactors=TRUE)
+
+# now explore Corona_DF - what is different? There should be one major difference. Do not spend more than 2 minutes on this part.
+
+```
+
+But most of the time we'll keep strings as simple strings (not factors) so we'll stick with he default (FALSE) value of `stringsAsFactors`.
+
+R will load many types of data such as JSON, excel files, xml, html, delimited text. We will work with CSV files in this course.
+
+## Renaming columns
+
+Knowing how to change your column names can be useful. Here we use the names command to do this.
+
+To access a specific column, use the dollar sign (\$) after the data frame variable followed by the name of the column. For example
+
+`CoronaDF$TweetAT` means the column name `TweetAt` in the data frame `Corona_DF`
+
+```{r}
+Corona_DF <- read.csv("data/CORONA_TWEETS.csv")
+
+# you can rename one column:
+names(Corona_DF$TweetAt)<-c("TweetDate") # rename TweetDate to TweetAt
+glimpse(Corona_DF)
+```
+
+But it's often convenient to rename them all at the beginning:
+
+```{r}
+Corona_DF <- read.csv("data/CORONA_TWEETS.csv",  stringsAsFactors=FALSE)
+
+# you can rename all columns in one go:
+names(Corona_DF) <- c("id", "my_text_data", "name", "Location", "Date", "Sentiment")
+glimpse(Corona_DF)
+```
+
+You can also subset based on values using subset(). Maybe you only want to look at UK tweets
+
+```{r}
+# Based on string value
+Corona_DF_UK <- subset(Corona_DF, Location = "UK") 
+glimpse(Corona_DF_UK)
+```
+
+## Using and saving tibbles:
+
+If we want to convert our data frame to a tibble.
+
+Tibbles have nice printing method that show only the first 10 rows and all the columns that fit on the screen. This is useful when you work with large data sets.
+
+```{r}
+Corona_TB <- as_tibble(Corona_DF) #Converting into the tibble dataframe
+Corona_TB
+# remember that depending on your screen size you might have to 'scroll to the right with ▶ arrow'
+```
+
+Finally, you can save any data frame as a CSV file to use later on in a different program. Use the function write.csv(). Specify the data frame, file destination, and the separator.
+
+Row names are used by default, but I typically set it to false. This will write to the working directory you set in setwd() unless you specify a full path.\
+Use help(write.csv) to see options
+
+```{r}
+write.csv(Corona_DF, file="my_corona_data_rownames.csv")
+write.csv(Corona_DF, file="my_corona_data_no_rownames.csv", row.names= FALSE)
+# View the CSV's you created above, in Rstudio, to see the difference between two files!
+```
+
+You can also write one column using the \$ operator to access the column
+
+```{r}
+write.csv(Corona_DF$text, file="my_corona_data_textcolumn.csv")
+```
+
+## Activity:
+
+Revisit all the examples given above to achieve this task:
+
+-   Load the file CORONA_TWEETS.csv,
+-   then rename its columns to more meaningful and unified names,
+-   then only keep tweets from UK
+-   then save it into a new file, but only keep the column with all the text in it.
+-   ...optionally, if you'd like to have some fun, apply anything you learned in the last few badges to this dataset
+
+**This is important and NON-TRIVIAL part of this activity:**
+
+The core skill of a programmer is: combining a lot of small pieces of code (each working separately), in a bigger final piece of code (that works when put together).
+
+```{r}
+# your code here. 
+
+```
+
+[hint for task 01a - common things that can go wrong](./hints/hint_3_1a.Rmd)
+
+[hint for task 01b - actual code answer](./hints/hint_3_1b.Rmd)
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.
+
+# Conclusion:
+
+Loading files and initial process of preparing them is something that you will become very good at while using unstructured data such as text. It's important to stay consistent and follow the best practices of your organisation and colleagues in terms of how to name things, and how to structure your code. The best code is REPRODUCIBLE, which means that you trust it to run and work in the same way, irrespectively of what exact data is fed into it.

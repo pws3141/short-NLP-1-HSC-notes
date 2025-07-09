@@ -1,0 +1,21 @@
+Oh no, but what if a room name has some other letters just before it or just after? like BB.123A?
+
+```{r}
+tricky_rooms_string <- " BSSFSST.123AA BBBBBBB.123AA BB.123A B.123A B.123AA B.123AA "
+# one is correct. which one? why?
+
+regex_previous <- "[BFST]{1}\\.\\d{1,3}[TARP]{1}"
+tricky_rooms <- str_extract_all(tricky_rooms_string, regex_previous)
+print(tricky_rooms)
+# it looks like some invalid names sneaked in
+
+
+regex_fancier <- "(?<=\\s)[BFST]{1}\\.\\d{1,3}[TARP]{1}(?=\\s)"
+# i.e. say "has to have a string before, and after"
+tricky_rooms_fancy <- str_extract_all(tricky_rooms_string, regex_fancier)
+
+print(tricky_rooms_fancy)
+
+# you could go firther and say 'has to have a string or end at the beginning, and string or end at the end'
+# but that's not for today
+```

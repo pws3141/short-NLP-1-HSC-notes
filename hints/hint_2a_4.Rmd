@@ -1,0 +1,8 @@
+4) Replace Meilo with Pippa.
+
+```{r}
+strings4concat<-c('Hello, how are you today?','I am fine, and you?', 'It is terrible weather we have had is it not?', 'I know my cat, Mielo is so miserable. She does not want to go out.')
+
+concatstring<-str_replace(concatstring,"Mielo","Pippa")
+print(concatstring)
+```

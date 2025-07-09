@@ -1,0 +1,9 @@
+5) What if there was more than one birthday in the string? Here you are given another sentence - add your own birthday at the end of it, and then write code which will extract all four birthdays using a regular expression.
+
+```{r }
+sentrence_with_many_birthdays <- "Natasha Smyth was born on 30-01-1999 and loves NLP. Her friend Pat was born on 02-01-2000 and their friend Kat was born on 13-11-1997. And your birthday is ...?"
+
+regex_string <- "\\d{2}-\\d{2}-\\d{4}" # the same one!
+birthdays<-str_extract_all(sentrence_with_many_birthdays, regex_string ) #only difference: we use str_extract_all
+print(birthdays)
+```

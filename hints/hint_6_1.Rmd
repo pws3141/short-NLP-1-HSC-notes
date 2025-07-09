@@ -1,0 +1,10 @@
+```{r}
+my_text_about_cats<-c("My cat is tired today. She is sleeping on her mat in the sun. She is dreaming about running and eating now. She usually wakes when she is hungry.")
+
+stems <- stem_strings(my_text_about_cats)
+stems
+
+lemmas <- lemmatize_strings(my_text_about_cats)
+lemmas
+```
+

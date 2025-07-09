@@ -1,0 +1,6 @@
+This is a hint! often it will include some code that will point you towards a solution. But always try to solve it by yourself (without a hint) first - this way you will learn much more!
+
+```{r}
+advice <- "first try to do it yourself"
+print(toupper(advice))
+```

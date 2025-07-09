@@ -1,0 +1,14 @@
+
+
+```{r}
+cont_string <-c(" I won't be at class tonight as I cant find my car keys.  Please don' t forget to    take tell  the teacher I'm sorry, I do not want her to think I forgot. I'll see you tommorrow .    ")
+
+cont_string<-gsub('(\\s)\\.|\\.(\\s)$','\\.',cont_string,perl=TRUE) # gets spaces around the period
+cont_string<-gsub('\'\\st','\'t',cont_string,perl=TRUE)# gets space between the ' t
+cont_string<-gsub('^\\s|\\s$','',cont_string,perl=TRUE) #gets spaces at start and end
+cont_string<-gsub('\\s+',' ',cont_string,perl=TRUE) #gets the extra space in front of please
+print(cont_string)
+
+# again: is there an easier or prettier way to deal with this?
+```
+

@@ -1,0 +1,10 @@
+s+ replaces one or more characters that `is space`.
+S+ replaces one or more characters that `is not whitespace`.
+
+```{r replace_digits}
+my_digits<-c(" 1 a ")
+
+print(gsub('\\s+','SPACE', my_digits) ) 
+print(gsub('\\S+', 'OTHER', my_digits) ) 
+
+```

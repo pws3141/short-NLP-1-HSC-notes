@@ -1,0 +1,264 @@
+---
+title: "Week 1 Badge 2a Strings in R"
+output: html_document
+date: "2024-09-12"
+---
+
+# Strings in R
+
+In this notebook we will explore strings and how to manipulate strings in R. Strings are the building blocks of text data.
+
+## Useful string tools:
+
+R comes with a lot of basic text processing out of the box.
+
+Here are some useful functions:
+
+-   `paste`: glue text/numeric values together
+
+-   `substr`: extract or replace substrings in a character vector
+
+-   `grep` family: use regular expressions to deal with patterns of text
+
+-   `strsplit`: split strings
+
+-   `nchar`: how many characters in a string
+
+-   `as.numeric`: convert a string to numeric if it can be
+
+**Useful R packages:**
+
+stringr/stringi: similar to functionality with *substr*, *grep* but with some added functionality (e.g. str_to_title). The *stringr* package is mostly a wrapper for the *stringi* functions, with some additional functions.
+
+*tidytext* and *tidyverse* also have functions to clean and process data which we will see next week.
+
+**Reminder: Useful string rules**
+
+-   Quotes at the beginning and end of a string should be `"both double quotes"` or `'both single quotes'`. They can not be mixed.
+
+-   'Double quotes, `"`, can be inserted into a string starting and ending with a single quote'.
+
+-   "A single, `'`, quote can be inserted into a string starting and ending with double quotes".
+
+Lets get started with creating a simple string and printing it out.
+
+```{r start}
+mystring <-"We Love NLP!"
+print(mystring)
+```
+
+Lets try some string manipulation.
+
+-   `paste()`
+
+The `paste` function is used to concatenate strings and can take a number of arguments *Syntax: paste(…., sep = ” “, collapse =NULL )*
+
+Use `help` function to see information about arguments for a function e.g. *help(paste)*
+
+```{r paste}
+
+paste(c('We', 'love', 'NLP', '!'), collapse = ' ')
+
+# paste0 is short cut to collapse that concatenates with no space
+paste0('We','love','NLP', '!') 
+
+# concatenate two strings
+mystr1 <- "We love"
+mystr2 <- "NLP!"
+paste(mystr1, mystr2, sep = " ", collapse = "NULL")
+```
+
+-   `nchar()`
+
+Next count the number of characters in the string
+
+```{r countchar}
+mystring2 <- nchar("We Love NLP!")
+print(mystring2)
+```
+
+-   `tolower()` and `toupper()`
+
+We can also change the case of our text string
+
+```{r casechange}
+mystring <- c('We Love NLP!')
+
+#to lower case
+mystring_lower <- tolower(mystring)
+print(mystring_lower)
+
+#to upper case
+mystring_upper <- toupper(mystring)
+print(mystring_upper)
+```
+
+-   `substring()`
+
+Extracting parts of the string. This *substring* function can be used to extract parts of the string.
+
+Syntax: `substring(x, first, last)`
+
+`x` is the character vector input (or string).
+
+`first` - position of the first character to be extracted.
+
+`last` - position of the last character to be extracted.
+
+```{r sub}
+# Extract characters from 1th to 5th position.
+sub_mystring <- substring(mystring, 1, 5)
+print(sub_mystring)
+```
+
+-   `grep`
+
+Alternatively we can use the grep command to detect if the string we are looking for is present
+
+Note this returns a vector of the indices of the elements that yield a match
+
+```{r grep}
+mystrings1 <- c("NLP", "nLP", "nlp", "nlP")
+grep('NLP', mystrings1)
+
+mystrings2 <- c("NLP", "nLP", "NLP", "nlP")
+grep('NLP', mystrings2)
+
+#Same again but ignore the case
+mystrings3 <- c("NLP", "nLP", "nlp", "nlP")
+grep('nlp', mystrings3, ignore.case ="True")
+
+
+```
+
+We can also use the *stringr* package to manipulate strings and *tidyverse* has a library of possibilities and a few of which we will demonstrate below.
+
+We need to make sure the libraries are installed and loaded first
+
+```{r stingrinstall}
+# to use a package you first need to install it.
+if (!require(stringr)){ # this  optionally checks first if you might already have this library
+  install.packages("stringr") # this installs the package
+}
+#now load the library
+library(stringr)
+```
+
+Follow the command below to explore the functionality.
+
+```{r strcommands}
+#Creation of a string
+mystring <- 'We love NLP! Do you LOVE NLP?'
+print(mystring)
+```
+
+-   `str_locate()`
+
+```{r }
+
+#locate character position of string of interest.
+str_locate(mystring, "NLP")# outputs the characters where the word is found - only outputs the first one found
+```
+
+-   `str_replace()`
+
+```{r }
+#Replace a word
+mystring <- c('We love NLP! Do you LOVE NLP?')
+
+print(mystring)
+str_replace(mystring, "We", "Cats")
+```
+
+-   `str_extract()`
+
+```{r }
+#Detects if the string is present
+str_extract(mystring, "love")  
+```
+
+-   `str_length()`
+
+```{r }
+mystring <- c('We love NLP! Do you LOVE NLP?')
+
+# shows the length of the string
+str_length(mystring) 
+```
+
+-  `str_count()`
+
+```{r }
+# counts how many times the string occurs
+str_count(mystring, "NLP") 
+```
+
+-   `str_detect()`
+
+```{r }
+# tells if there is a match in the string 
+str_detect(mystring, "NLP")
+```
+
+# Activity 1:
+
+1)  Concatenate the strings 'strings4concat' below into one piece of text with a space between each sentence.
+
+```{r}
+strings4concat <-
+  c(
+    'Hello, how are you today?',
+    'I am fine, and you?',
+    'It is terrible weather we have had is it not?',
+    'I know my cat, Mielo is so miserable. She does not want to go out.'
+  )
+
+# write your code here
+
+```
+
+[hint for task 01](./hints/hint_2a_1.Rmd)
+
+2)  How many times does the word I appear?
+
+```{r}
+# write your code here
+
+```
+
+[hint for task 02](./hints/hint_2a_2.Rmd)
+
+3)  How long is the text?
+
+```{r}
+# write your code here
+
+```
+
+[hint for task 03](./hints/hint_2a_3.Rmd)
+
+4)  Replace Meilo with Pippa.
+
+```{r}
+# write your code here
+
+```
+
+[hint for task 04](./hints/hint_2a_4.Rmd)
+
+5)  Expand the string to also say 'I will come visit on Sunday and bring Pippa treats.' at the end
+
+```{r}
+# write your code here
+
+```
+
+[hint for task 05](./hints/hint_2a_5.Rmd)
+
+# Reflection:
+
+Normally at this point you will be asked to write down things you learned. But this badge is special, and it contains two notebooks. Continue to the next notebook of badge 2 and then do your self-reflection after that.
+
+# Conclusion:
+
+In this badge we have looked at strings in R and used some functions to manipulate and find strings in our text data.

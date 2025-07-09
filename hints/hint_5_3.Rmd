@@ -1,0 +1,29 @@
+---
+title: "Remove Words Example"
+output: html_notebook
+---
+
+```{r}
+#first see it without removals:
+mydata_word_counts%>%
+  anti_join(stop_words)%>%
+  filter(n > 400) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+```
+then try with the removed words:
+
+```{r}
+#Example answer
+mydata_word_counts%>%
+  anti_join(stop_words)%>%
+  filter(!(word %in% c("https", "t.co")))%>%
+  filter(n > 400) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+```
+

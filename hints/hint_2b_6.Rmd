@@ -1,0 +1,10 @@
+Think step by step about what you want to find: The description:
+
+Given below string, identify in it all possible room numbers in the neh hospital. You know that the room number always starts with a Letter for the floor ('B','F','S','T') then a dot '.', followed  the number of the room on that floor which is a number made of 1,2 or 3 digits (eg. 3,12,133) finally a letter which indicates if the room is used for Teaching (T), Admin (A), Research (R) or Patient-related tasks (P). So example room names could be: B.21R is a room 21 on basement floor used for research, S.111P is a room 111 on second floor used for seeing patients. Inapropriate room number would use other letters (or miss them) at the beginning or end, and would have no digits or more than 3 digits.
+
+can be parsed as:
+
+1. one letter from a set 'B','F','S','T'
+2. then a dot "." - keep in mind that in regex a symbol of a dot . means 'any character', so if you want to say THERE SHOULD BE AN ACTUAL DOT you need to escape/disarm that special dot with \\ so you would say \\.
+3. then between 1 and 3 digits - remember, how do you say a digit? and how do you say between 1 and 3 of them?
+4. finally one letter from a set 'T','A','R','P'

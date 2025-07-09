@@ -1,0 +1,31 @@
+---
+title: "Word Clouds"
+output: html_notebook
+---
+
+
+```{r}
+#this counts the words in the text column removing stop words
+
+cloud_biwords <-  mydata_TB %>%
+  select(text) %>%
+  unnest_tokens(ngram, text, token= "ngrams", n=2 )
+ 
+# remove stop words
+my_stopwords <- c("https", "t.co")
+
+cloud_biwords <- cloud_biwords %>%
+  separate(ngram, into = c("first","second"), sep = " ", remove = FALSE) %>%
+  anti_join(stop_words, by = c("first" = "word")) %>%
+  anti_join(stop_words, by = c("second" = "word")) %>%
+  filter(!(first %in% my_stopwords), !(second %in% my_stopwords)) # this removes all bigrams where first or second is in my_stopwords
+
+  
+
+#This sorts (orders) the counts of the words
+cloud_biwords <- cloud_biwords %>% count(ngram, sort=TRUE)
+
+wordcloud2(cloud_biwords, size = 0.7, shape = 'star')
+```
+
+

@@ -1,0 +1,6 @@
+here filter is saying `not true` (`!` means `NOT`) that value in column `fruit` is in  (using `%in%` operator) in the collections `c("apples","pears","plums")`
+```{r}
+# hint2: filter() and collections
+data.frame(number = 1:3, fruit = c("banana","kiwi","pears")) %>% 
+  filter(!(fruit %in% c("apples","pears","plums"))) 
+```

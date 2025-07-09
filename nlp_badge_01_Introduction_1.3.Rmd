@@ -1,0 +1,37 @@
+---
+title: "Badge 1"
+output: html_document
+date: "2024-09-12"
+---
+
+# Introduction to NLP
+
+This notebook should only take you about a minute.
+
+## What is a R Markdown notebook / file:
+
+Each badge video will be accompanied by a notebook like this. In it you will find more in depth explanations of content you've watched and also some new ones. There will also be a lot of coding examples and tasks 
+
+```{r}
+# you can write your code here
+# and you can run this code cell with shift+ctrl+Enter
+# try it now:
+
+paste("NLP","is","the","best", sep = "***")
+```
+Sometimes coding tasks might be a bit tricky, in which case we will leave a number of hints for you. To open a hint, you need to click the link to file name below, while holding ctrl on a PC (or cmd on a mac). It opens a separate file with a hint.
+
+[hint for task 01](./hints/hint_1_1.Rmd)
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3
+STARS (things that you learned in this badge), and 1 WISH: a thing you
+wish you understood better. You might also thing of what would you do to
+fulfil your wish. Write them down, and post them on Learn - preferably immediately after writing them, this will strengthen your learning.
+
+Go to learn now, and write what you learned from the long badge 01 video and this notebook.
+
+# Conclusion:
+
+In very short badge has shown you the format of a markdown file which we will use to accompany content videos. 

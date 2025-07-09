@@ -1,0 +1,10 @@
+1) Concatenate the strings 'strings4concat' below into one piece of text
+with a space between each sentence.
+
+```{r}
+strings4concat<-c('Hello, how are you today?','I am fine, and you?', 'It is terrible weather we have had is it not?', 'I know my cat, Mielo is so miserable. She does not want to go out.')
+
+concatstring<- paste(strings4concat, collapse=" ")
+print(concatstring)
+
+```

@@ -1,0 +1,397 @@
+---
+title: "BADGE 2-4 Cleaning & Preprocessing"
+output: html_document
+date: "2024-09-12"
+---
+
+# Cleaning and Preprocessing Text
+
+## Useful Libraries
+
+There are many **packages/libraries** for cleaning text and we will show some different options. We encourage you to read up on these packages and
+become familiar with their commands.
+
+First lets load some libraries we will need. Remember that if a library is not already installed in your system, you'll have to use `install.packages("libraryname")` before `library(libraryname)`.
+
+Noteable system already will come pre-loaded with most of the libraries we need, but when you work on your own projects later, you will need to keep in what already installed, and what you need to install.
+
+```{r LoadLibraries}
+# first some imports:
+if (!require(readr)){
+  install.packages("readr")
+}
+if (!require(dplyr)){
+  install.packages("dplyr")
+}
+if (!require(tidytext)){
+  install.packages("tidytext")
+}
+if (!require(stringr)){
+  install.packages("stringr")
+}
+library(readr)
+library(dplyr)
+library(tidytext)
+library(stringr)
+```
+
+## Finding and replacing numbers
+
+In this first example we are going to use a regular expression with the `gsub` command to find and replace numbers to a standardised term 'DIGIT'
+
+```{r replace_digits}
+#String with numbers
+my_digits <- c("13 September: My number is 07234 and I live at 8 fleet street. I have lived there since 2021")
+
+print(my_digits)
+
+# The regular expression in gsub finds numbers at the start followed by a single space OR any numbers preceded and followed by a single space
+my_digits <- gsub('^\\d+\\s|\\s\\d+\\s', ' DIGIT ', my_digits) 
+
+print(my_digits) 
+```
+
+Why did it not match the year at the end?
+
+## Activity: Make the regular expression more universal
+
+What is special about the number that did not get 'captured' by that regex? Thinking about the regular expressions you learned in Week 1 can you fix this?
+
+```{r replace_year ANSWER}
+your_regex <- '^\\d+\\s|\\s\\d+\\s' # adjust this regex!
+my_digits <- gsub(your_regex, ' DIGIT ', my_digits) #
+print(my_digits) 
+```
+
+[Answer:](./hints/hint_4_1.Rmd)
+
+**Normalising Special Characters and Abbreviations**
+
+First, we will use a regular expression to find URLs and replace with the term 'WEBSITE'.
+
+Second, we will look for different abbreviations of USA and normalise these to one abbreviation type.
+
+What does regex `\S+` do? 
+
+[HINT](./hints/hint_4_2.Rmd)
+
+
+```{r specchar_abbrev}
+#URL Detection
+my_url <- c("My website is at http://www.ed.ac.uk")
+print(my_url)
+
+# this regex removes the URL and replaces with WEBSITE
+my_url <- gsub('http\\S+\\s*', 'WEBSITE', my_url)
+print(my_url)     
+
+#ABBREVIATIONS
+my_abbrev <- c("I used to live in U.S.A. but I no longer live in the US I live in Scotland")
+print(my_abbrev)
+
+# looks for abbreviation of USA (U.S.A, US, U.S.) and replaces these with USA.
+my_abbrev<-gsub('(U\\.S\\.|USA|US|U\\.S\\.A\\.)',"USA", my_abbrev)
+print(my_abbrev)
+```
+
+## Punctuation
+
+How you remove punctuation is important as you may need it for further downstream analysis for example if you want to tokenise the document into sentences so `.?!` will be important, and maybe should not be simply removed...
+
+Note: there exist some 'character classes' which have a special notation in R regex. If you want to use a space, you'd use `\s`, digit is `\d` but there are some more complex ones like `[[:punct:]]` for punctuation, or `[[upper]]` for upper-case characters. Regex truly is a huge and fascinating topic.
+
+Have a look at the examples below - what do they do?
+
+```{r punc}
+my_sentences<-c("Hello, how are you today? I'm looking forward to fun with NLP. Are you?")
+print(my_sentences)
+
+# remove some specific characters
+my_sentences0<-gsub('[?!\\.]+','',my_sentences)
+print(my_sentences0)
+
+# remove all known punctuation
+my_sentences1<-gsub('[[:punct:]]','',my_sentences)
+print(my_sentences1)
+# ooops: do you see something funny happening here? Hint: look around "I'm"
+```
+
+Oh no! we lost all punctuation! Which means we actually lost a lot of information. Plus we also removed the `'`
+
+When building regex, there is often a temptation to be too specific and too smart. See below as a cautionary tale.
+
+e.g. But what if you wanted to retain some very specific punctuation, let's say all `'` ?
+
+(Kind note: We're just showing this to you, so you can see how incredibly tricky regex can get. If you're not up for  tricky stuff just now, scroll down to the part saying "Ok. Breathe in - breathe out.", and maybe return here one day!)
+
+## (advanced regex): Lookups (expect things before/after, but do not include them int he match)
+
+this bit is so tricky you need to enable more complex regex features with `perl=TRUE`. It uses `lookup` syntax where `?` means lookup, `!` means NOT and `<` means before. See below:
+
+- `(?=SOMETHING)` - followed by SOMETHING
+- `(?!SOMETHING)` - NOT followed by SOMETHING
+- `(?<=SOMETHING)` - proceeded by SOMETHING
+- `(?<!SOMETHING)` - NOT proceeded by SOMETHING
+
+Have a look at this code and what it does:
+
+```{r}
+snacks <- ("pineapple apple applepie sweetwater water watermelon ") 
+snacks
+
+snacks<-gsub('apple(?=pie)','11111',snacks, perl=TRUE)
+snacks  # replace apple only when followed by pie (leave other apples alone)
+
+snacks<-gsub('water(?!\\s)','22222',snacks, perl=TRUE)
+snacks # replace water NOT followed by space 
+
+snacks<-gsub('(?<=pine)apple','33333',snacks, perl=TRUE)
+snacks # replace apple proceeded by pine 
+
+snacks<-gsub('(?<!sweet)water','44444',snacks, perl=TRUE)
+snacks # replace water NOT proceeded by sweet 
+```
+Back to our example:
+
+We could say any punctuation not proceeded by ' (i.e. all punctuation, apart of an actual ').
+
+For an extra curve-ball:
+- if you surround regex with " you do not need to escape '  - `"I'm hungry"`
+- if you surround regex with ' you do not need to escape " - `'that is "nice"'`
+- but if you want to use the same bracket in regex, which you used to surround regex... you need to escape it `'I\'m hungry'` or `"that is \"nice\""`
+
+This is important because we want to sat "each punctuation not proceeded by "
+
+```{r punc}
+my_sentences3<-gsub("(?!')[[:punct:]]",'',my_sentences, perl=TRUE)
+my_sentences3 
+
+my_sentences3<-gsub('(?!\')[[:punct:]]','',my_sentences, perl=TRUE)
+my_sentences3 # another curve ball
+```
+What happened above? Try to get it, maybe change it a bit. But also, this level of complexity is a bit beyond the scope of this badge.
+
+**OK. Breathe in - breathe out. Is there a simpler way to not lose punctuation.**
+
+Let's take a step back and ask ourselves what we want to do. For example:
+
+I want to be able to separate sentences, but not lose the exact place where they finished! Let's solve it by adding a new special symbol `[EOS]` (literally "open bracket, then three letters E, O and S, then close bracket"). But it is often agreed to mean `End Of Sentence`. This way we unify the `!?.` into a new symbol (that we sort of invented), the `[EOS]`.
+
+This way you could: count sentences. Split whole string into individual sentences. And much more, but without having to always refer to all the ways in which sentence can end (i.e. `?` `!` and `.`).
+
+```{r punc}
+# let's use this regex meaning: all !?. followed by a space, or end of string. 
+# and replace them with [EOS]
+
+my_sentences3 <- gsub('[!?\\.](\\s+)|[!?\\.]$', '[EOS]', my_sentences, perl = TRUE)
+print(my_sentences3)
+```
+
+Consider the last example do you see any challenges with this matching strategy and think of ways to overcome this?
+
+
+## ACTIVITY: Contractions: "You'd love to come back to the `'`?" or "You would love to come back to the `'` ?"
+
+Can you come up with a regular expression for finding contractions in these strings and making the same words be similar? (`we're` into `we are`)
+
+```{r contract}
+my_string <- c("I won't be at class tonight as I can't find my car keys. Please don't forget to tell the teacher I'm sorry, I don't want her to think I've forgotten about it. You'll remember to tell her, won't you? I'll see you tommorrow.")
+
+# try to write a bunch of lines of code with replacements which will 'lengthen' all short forms like "don't" into "do not". 
+# Do it as a series of steps, each improving the main sentence:
+
+my_string <- gsub('we\'re', 'we are', my_string)
+my_string <- gsub('something', 'something_else', my_string)
+my_string <- gsub('something22', 'something_else2', my_string)
+# ... more code here
+
+print(my_string)
+```
+[HINTS](./hints/hint_4_3.Rmd)
+
+
+## ACTIVITY: Remove accidental extra spaces:
+
+In the following string can you remove the extra white space?
+
+```{r extraspace}
+cont_string <- c(" I won't be at class tonight as I cant find my car keys.  Please don' t forget to    take tell  the teacher I'm sorry, I do not want her to think I forgot. I'll see you tommorrow .    ")
+
+# your code below
+my_string <- gsub('something', 'something_else', my_string)
+# ... more code here, it could also be a chain.
+# remove simple spaces first, then trickier ones!
+
+print(my_string)
+```
+
+[HINTS](./hints/hint_4_4.Rmd)
+
+There is the package `cleantext` which can help with these things more automatically
+
+## Tokenisation
+
+Tokenisation, this is splitting a string into separate meaningful components. This is usually words but could be sentences, sub words or phrases.
+
+```{r token}
+token_string <- c("We Love NLP! Isn't it great? I think so.")
+print(token_string)
+
+#splitting on string between spaces
+new_token_string <- str_split(token_string,"\\s+") 
+print(new_token_string)
+```
+
+Note: Here our words are 'polluted' by punctuation, like "great?". You already know how to remove punctuation using regex, and also there are several R packages that undertake text based tokenisation for you.
+
+We are going to use features from `tidyverse` and `tidytext` but there are many others out there (such as the `tm` package)
+
+First we will load the libraries needed. (remember `install.packages("libraryname")` if these are not already installed
+
+Note `tidytext` expects data to be in a tibble format.
+
+```{r load_lib}
+if (!require(tidytext)){
+  install.packages("tidytext")
+}
+if (!require(tibble)){
+  install.packages("tibble")
+}
+if (!require(dplyr)){
+  install.packages("dplyr")
+}
+if (!require(ggplot2)){
+  install.packages("ggplot2")
+}
+
+library(tidytext)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+```
+
+This converts the data to a tibble format and separates each row of the dataframe word by word (remember tibbles from week 1)
+
+
+```{r tibble}
+my_text <- c(
+  "Oh! what a lovely day it is, for today we are having fun with NLP. We will learn about cleaning our text", 
+  "My cat is tired today. She is sleeping on her mat in the sun.  She will wake when she is hungry."
+  )
+
+# We first put our text into the tibble dataframe. It will have two columns:
+# 'line' with numbers from 1 to 2  (since string above has two rows)
+# 'text' which will hold two lines from the collection above.
+# these texts are not yet divided into sentences (the first has two sentences and the second 3 sentences.)
+my_text_df <- tibble(line=1:2, text=my_text) 
+# my_text_df <- tibble(line=1:length(my_text), text=my_text)  # this would be a more universal version
+
+#show our tibble dataframe
+my_text_df 
+```
+
+We can now convert our text into our desired tokenised form.
+
+We are going to start by tokenising our text into words using the `unnest_tokens` function. Use `help(unnest_tokens)` to see options for this function.
+
+**a note about a %>% PIPE**
+
+If you've never see `%>%` syntax, it is called `PIPE` (like in plumbing) and is a part of possibly most powerful and popular R library called `tidyverse`. Pipe means: take the data on the left, and 'pipe them/feed them' into the code on the right. The code on the right is usually a function, in which case the 'piped' data is fed into the `first argument` of that function.
+
+```{r}
+nchar("banana") # nchar function takes one argument: the string of which it will return a "number of characters" (length)
+
+# but with pipe, we do not give an argument to nchar() but instead we pipe/feed collection of 3 words into it,
+# and pipe will 'feed' each item in the collection into nchar() as its fitst argument, one after another
+c("banana","kiwi","pear")  %>% nchar() 
+```
+
+
+OK, back to the tokens:
+
+```{r token}
+# The unnest_tokens function is given three arguments:
+# - the 'piped' elements of my_text_df
+# - 'word' which tells it to tokenise by single words
+# - name of the column in the tibble which should be used (in our example, we called that column 'text') 
+my_text_df %>% unnest_tokens(word,text) 
+```
+
+It is possible to lowercase text and strip punctuation whilst unnesting the tokens. Punctuation is removed by default, where unnest_tokens assumes you said `strip_punct = TRUE` if you said nothing to the contrary (because it is so common). But if you actually want to keep punctuation, you need to request it specifically with `strip_punct = FALSE`. 
+
+By default `unnest_tokens` converts text to lowercase you can turn this off by `to_lower=FALSE` as an argument. This can be useful at this stage as you try to understand the data. And losing sizes of letters might hide some meanings.
+
+```{r token_lower}
+my_text_df %>%
+  unnest_tokens(word, text, to_lower = FALSE, strip_punct = TRUE)
+```
+## N-grams: more than one word
+
+In the example we tokenise by two word phrases and then by sentences.
+
+Remember multiple words phrases are also called n-grams, where `n` represents the number of words 2-gram are called bigrams.
+
+```{r token_other}
+
+#tokenise by bigrams
+my_text_df %>% unnest_tokens(ngram, text, token="ngrams", n=2) 
+
+#In this example we tokenise by sentences
+my_text_df %>% unnest_tokens(sentence, text, token="sentences") 
+
+# notice that the result below probably shows you two grey rectangles: previews of the results of your pipes.
+# This is equivalent of you printing two lines of text, but this data is better formatted
+```
+
+You can use regular expressions to tokenise in different ways. For example if each document had a chapter header.
+
+Below we tokenise by CHAPTER markers in the text. We create some text with chapter markers (CHAPTER) and turn into a tibble data frame below. 
+
+```{r}
+my_text2 <- c("CHAPTER 1 Oh what a lovely day it is, for today we are having fun with NLP. CHAPTER 2 We will learn about cleaning our text", "CHAPTER 3 My cat is tired today. She is sleeping on her mat in the sun.  CHAPTER 4 She will wake when she is hungry.")
+
+#turn data into a tibble
+my_text_df2 <- tibble(line=1:2, text=my_text2)
+
+#Now we tokenize based on the CHAPTER separator
+my_text_df2 %>% unnest_tokens(chapter, text, token="regex", pattern = "CHAPTER\\s+\\d+") 
+```
+(hey! do you remember our `[EOS]` token from before? Do you see where this is going?)
+
+## ACTIVITY: Load a text file and clean up the data
+
+Read in the random text file (`random.txt`), and tokenise it into sentences making it into lowercase and removing the punctuation.
+
+Reading in this kind of text file is different to what you have seen before. The starting code below includes some code to show you how to do this using the `readline` function and `paste` (from week 1).
+
+If you want to try find more details about those, try *help(readlines)* to see if you can work out how to bring the data in. Don't forget to turn it into a tibble to use unnest_tokens.
+
+The first part is given to you: read the file and turn it into a tibble:
+
+```{r mini_todo_answertoreadinfile}
+# read the file
+file_path <- "./data/random.txt"
+text_content <- readLines(file_path) # Read lines from the file
+single_string <- paste(text_content, collapse = " ") # Collapse the lines into a single string
+text_df <- data.frame(text = single_string, stringsAsFactors = FALSE) # First create a dataframe with one column named "text"
+text_tb <- as.tibble(text_df) # then tibble it. Notice it can be a two step process.
+print(text_tb)
+```
+At this point is it still a very long string with all the punctuation and letter sizes. Not your turn:
+
+Use the `%>%` pipe and `unnest_tokens` to split this tibble into cleaned up sentences.
+
+```{r}
+ #unnest the tokens to sentences, strip punctuation and lower case, like:
+# text_tb %>%  something???
+```
+
+[if you are struggling after a few minutes, have a look here](./hints/hint_4_5.Rmd)
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfill your wish. Write them down.
+
+# Conclusion:
+
+Now you know much more about cleaning up and preparing your datasets, in preparation for looking for some insights in your data!
