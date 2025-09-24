@@ -1,0 +1,36 @@
+# Tutorial 1: Pride, Prejudice and NLP
+
+In the first tutorial we will just try to have some fun with a text of an old book. 
+We picked a freely available copy (via guttenberg project) of "Pride and Prejudice" by English author Jane Austen from 1813.
+
+Below you will find a piece of code that loads the book. From there on, try to tackle tasks with your partner, and try to have some fun. We'd like to encourage you to switch after each task who's the driver (the person sharing their screen and typing).
+
+```{r}
+
+pride_prejudice <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
+pride_prejudice
+
+```
+
+## Task 1. Generate some basic stats about the book: number of characters, number of words, number of sentences? lines? paragrahs? or number of chapters or illustrations?
+
+Just use the string and regex skills that you have, at times you might have to be creative. Just state your assumptions in the code. e.g. 'by lines we mean anything that starts with a new line'. Or Chapter is anything with a word "chapter" followed by a number.
+
+```{r}
+# your code here. You can create more 'code cells' with a green [+c] icon on top 
+
+```
+
+## Task 2. [SOMETHING] and [SOMETHING] (anonymisation by hand)
+
+We will learn more about entity recognition in the incomming badges, but could you 'anonymise' the book by replacing all names of characters with a tag like `[CHARACTER]` and maybe all places with `[LOCATION]`. If you do not know the book, here's a list of some [characters](https://en.wikipedia.org/wiki/Pride_and_Prejudice#Characters). In terms of locations you could start with "Longbourn estate", "Meryton", "Hertfordshire" and "England". But also you migth chose to 'anynymise' something completely different. How about all gerrund verbs like `...ing` as `[ACTION]` or days of the week?
+
+```{r}
+# your code here. You can create more 'code cells' with a green [+c] icon on top 
+```
+ 
+## Task 3. What other skills from badges 1,2 and 3 could you use here? What else could you achieve in a large text like this with regex?
+
+```{r}
+# your code here. You can create more 'code cells' with a green [+c] icon on top 
+```
