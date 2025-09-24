@@ -9,7 +9,7 @@ Below you will find a piece of code that loads the book. From there on, try to t
 
 pride_prejudice <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
 pride_prejudice
-
+str(pride_prejudice)
 ```
 
 ## Task 1. Generate some basic stats about the book: number of characters, number of words, number of sentences? lines? paragrahs? or number of chapters or illustrations?
@@ -18,15 +18,38 @@ Just use the string and regex skills that you have, at times you might have to b
 
 ```{r}
 # your code here. You can create more 'code cells' with a green [+c] icon on top 
+pridestr <- paste(pride_prejudice$The.Project.Gutenberg.eBook.of.Pride.and.Prejudice, 
+                  collapse = " ")
+str(pridestr)
 
+# number of characters
+nchar(pride_prejudice)
+# removing spaces
+nchar(gsub('\\s+', '', pride_prejudice))
+
+# number of words
+str_count(pridestr, '.\\s+')
+str_count(pridestr, '[A-Za-z0-9]+')
+
+# number of sentences
+str_count(pridestr, '[\\.?!]\\s+')
+#str_count(pridestr, '[\\.\\?!]\"')
+str_count(pride_prejudice, '[\\.\\?!]\"')
+
+# chapters
+length(grep('CHAPTER | Chapter', pridestr))
 ```
 
 ## Task 2. [SOMETHING] and [SOMETHING] (anonymisation by hand)
 
-We will learn more about entity recognition in the incomming badges, but could you 'anonymise' the book by replacing all names of characters with a tag like `[CHARACTER]` and maybe all places with `[LOCATION]`. If you do not know the book, here's a list of some [characters](https://en.wikipedia.org/wiki/Pride_and_Prejudice#Characters). In terms of locations you could start with "Longbourn estate", "Meryton", "Hertfordshire" and "England". But also you migth chose to 'anynymise' something completely different. How about all gerrund verbs like `...ing` as `[ACTION]` or days of the week?
+We will learn more about entity recognition in the incoming badges, but could you 'anonymise' the book by replacing all names of characters with a tag like `[CHARACTER]` and maybe all places with `[LOCATION]`. If you do not know the book, here's a list of some [characters](https://en.wikipedia.org/wiki/Pride_and_Prejudice#Characters). In terms of locations you could start with "Longbourn estate", "Meryton", "Hertfordshire" and "England". But also you migth chose to 'anynymise' something completely different. How about all gerrund verbs like `...ing` as `[ACTION]` or days of the week?
 
 ```{r}
 # your code here. You can create more 'code cells' with a green [+c] icon on top 
+pap_characters <- c("Elizabeth Bennet" | "Fitzwilliam Darcy" | "Jane Bennet" | "Mary Bennet" | "Catherine Bennet" | "Kitty" | "Lydia Bennet"
+pridestr_anon <- str_replace_all(pridestr, "Elizabeth Bennet", "[CHARACTER]")
+pridestr_anon <- str_replace_all(pridestr, "Bennet", "[CHARACTER]")
+
 ```
  
 ## Task 3. What other skills from badges 1,2 and 3 could you use here? What else could you achieve in a large text like this with regex?
