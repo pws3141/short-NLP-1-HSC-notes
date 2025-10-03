@@ -33,6 +33,14 @@ When we use files we need to point to them, e.g.. go into folder X, then inside 
 
 Not in this badge, but in your future work, you may want to use the following commands to get `getwd()` and set `setwd("SOME_DIRECTORY")` your current working directory. More about this later.
 
+> I like the `{here}` package, so will use that instead of `set_wd()`.
+
+```{r}
+library(here)
+here::i_am("nlp_badge_03_Files_v1.3.Rmd")
+dr_here()
+```
+
 ## Loading files:
 
 Let's start my loading a CSV file. We are going to use the read_csv function from the readr package. Use help(read_csv) to see further option.
@@ -72,7 +80,29 @@ Use these functions to explore your data.
 # we'll get you started with glimpse. below write code which uses other functions in the same way
 glimpse(Corona_DF) 
 
+# show the first 5 rows
+head(Corona_DF, n = 5)
+
+# dims of df
+dim(Corona_DF)
+
+# column names
+names(Corona_DF)
+
+# structure of df
+str(Corona_DF)
+
+# summary
+summary(Corona_DF)
 ```
+
+We can also use the [`{summarytools}` package](https://cran.r-project.org/web/packages/summarytools/vignettes/introduction.html#data-frame-summaries-dfsummary) to obtain more detailed summary statistics.
+
+```{r, warning=FALSE}
+library(summarytools)
+dfSummary(Corona_DF, valid.col = FALSE)
+```
+
 
 The file, was loaded with 3798 rows and 6 columns, is now stored in the Corona_DF variable. This loads the data with default settings, and R tries to guess what type of data you have, but sometimes it doesn't do well. So it's a good idea to specify some things.
 
@@ -86,7 +116,10 @@ Corona_DF <- read.csv("data/CORONA_TWEETS.csv",  stringsAsFactors=TRUE)
 
 # now explore Corona_DF - what is different? There should be one major difference. Do not spend more than 2 minutes on this part.
 
+str(Corona_DF)
 ```
+
+> Now, the `character` variables are read as `factor`'s.
 
 But most of the time we'll keep strings as simple strings (not factors) so we'll stick with he default (FALSE) value of `stringsAsFactors`.
 
@@ -122,9 +155,24 @@ You can also subset based on values using subset(). Maybe you only want to look 
 
 ```{r}
 # Based on string value
-Corona_DF_UK <- subset(Corona_DF, Location = "UK") 
+# note the 'warning' in the help file for 'subset': better to use '[]'?
+#Corona_DF_UK <- subset(Corona_DF, Location = "UK") 
+Corona_DF_UK <- Corona_DF[Corona_DF$Location == "UK", ]
+
 glimpse(Corona_DF_UK)
 ```
+
+> I way prefer using `data.table` over `dataframes` and `tibbles`
+
+```{r}
+library(data.table)
+#setDT(Corona_DF) # to modify in place
+corona <- as.data.table(Corona_DF)
+corona_uk <- corona[Location == "UK"]
+dim(corona)
+dim(corona_uk)
+```
+
 
 ## Using and saving tibbles:
 
@@ -169,10 +217,64 @@ Revisit all the examples given above to achieve this task:
 
 The core skill of a programmer is: combining a lot of small pieces of code (each working separately), in a bigger final piece of code (that works when put together).
 
+> I'm going to use data.tables and janitor to help clean up column names, but let's first just have a look at the data.
+
 ```{r}
 # your code here. 
+corona_tweets <- read_csv(here::here("data", "CORONA_TWEETS.csv"))
+glimpse(corona_tweets)
 
 ```
+
+> OK... So I'm going to use 'fread' to read in as a data.table, and define the column types as I read the data in. Then, I can use janitor::clean_names and see where I stand.
+
+> Note, for the data column, I need to convert to date type using lubridate, after reading in as character.
+
+```{r}
+corona_tweets <- fread(
+  here::here("data", "CORONA_TWEETS.csv"),
+  colClasses = list(
+    integer = c("doc_id", "ScreenName"),
+    character = c("text", "TweetAt"),
+    factor = c("Location", "Sentiment")
+  )
+)
+
+corona_tweets[, TweetAt := lubridate::dmy(TweetAt)]
+corona_tweets <- janitor::clean_names(corona_tweets)
+glimpse(corona_tweets)
+```
+
+> Let's use better column names
+
+```{r}
+setnames(corona_tweets,
+        old = c("doc_id", "screen_name", "tweet_at"),
+        new = c("id", "name", "tweet_date"))
+glimpse(corona_tweets)
+```
+
+
+> Now, only keeping UK tweets
+
+```{r}
+corona_tweets_uk <- corona_tweets[location == "UK"]
+glimpse(corona_tweets_uk)
+```
+
+> Finally, saving the dataset (only the 'text' column)
+
+```{r}
+corona_tweets_uk_text <- corona_tweets_uk[, .(text)]
+# as an Rdata file
+save(data = corona_tweets_uk_text,
+     file = here::here("data", "corona_uk_text.Rdata"))
+# as a csv file
+write.csv(corona_tweets_uk_text, 
+     file = here::here("data", "corona_uk_text.csv"))
+
+```
+
 
 [hint for task 01a - common things that can go wrong](./hints/hint_3_1a.Rmd)
 

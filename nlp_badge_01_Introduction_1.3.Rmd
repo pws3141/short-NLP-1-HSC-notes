@@ -18,6 +18,11 @@ Each badge video will be accompanied by a notebook like this. In it you will fin
 # try it now:
 
 paste("NLP","is","the","best", sep = "***")
+
+someText <- "why ArE yOu WritTING iN sO mANy dIffERenT caSEs?"
+paste(toupper(someText))
+
+sprintf("%s", tolower(someText))
 ```
 Sometimes coding tasks might be a bit tricky, in which case we will leave a number of hints for you. To open a hint, you need to click the link to file name below, while holding ctrl on a PC (or cmd on a mac). It opens a separate file with a hint.
 

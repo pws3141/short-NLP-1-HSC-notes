@@ -125,7 +125,7 @@ But when we try to use it in our code things go wrong. That's because we are mis
 
 ```{r}
 sentence <- "some sentence."
-str_extract(sentence, ".*\s*\.\$") 
+#str_extract(sentence, ".*\s*\.\$") 
 # OH NOT WHEN WE RUN THIS WE WILL SEE AN ERROR! it will look a bit like this:
 # Error: '\s' is an unrecognised escape in character string starting ""`.*\s"
 ```
@@ -186,7 +186,7 @@ So if we break down `.*\s*.$` into groups as detailed above, which will look lik
 
 ## Using groups to achieve complicated and useful things:
 
-For example: replace all instances of a word with another work, but only if it is at the end of a sentence, or only if it is in between some other words. Or change a format of a phone number or address.
+For example: replace all instances of a word with another word, but only if it is at the end of a sentence, or only if it is in between some other words. Or change a format of a phone number or address.
 
 **Here's an example:**
 
@@ -249,7 +249,14 @@ names_old <- c("Jill Mathews",
 names_new <- gsub('(.*) (.*)', '\\2 \\1', names_old)
 
 # describe with your own words what happens here!
+# '(.*)' means that we capture any character zero or more times
+# So, group \\1 is the first name, group \\2 is the surname
+# relies on have two names, or hyphenated surnames etc.
 print(names_new)
+
+# now with a comma
+names_new2 <- gsub('(.*) (.*)', '\\2, \\1', names_old)
+print(names_new2)
 ```
 
 [hint for task 00](./hints/hint_2b_pre.Rmd)
@@ -263,6 +270,7 @@ for future: in your r console on he bottom of the screen type this: `?str_extrac
 ```{r}
 my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. What time does it start? It starts at 1pm, do you want to do lunch at 12pm?"
 # write your code here
+str_extract_all(my_sentence, "\\d+pm")
 ```
 
 [hint for task 01](./hints/hint_2b_1.Rmd)
@@ -273,6 +281,8 @@ my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. 
 my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. What time does it start? It starts at 1pm, do you want to do lunch at 12pm?"
 
 # write your code here
+new_sentence <- str_replace(my_sentence, "1pm", "1:30pm")
+new_sentence
 ```
 
 [hint for task 02](./hints/hint_2b_2.Rmd)
@@ -283,6 +293,8 @@ my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. 
 my_sentence <- "Hello, how are you today? I am looking forward to fun with NLP. What time does it start? It starts at 1:30pm, do you want to do lunch at 12pm?"
 
 # write your code here
+time_pat <- "(\\d+pm)|(\\d+:\\d+pm)"
+str_extract_all(my_sentence, time_pat)
 ```
 
 [hint for task 03](./hints/hint_2b_3.Rmd)
@@ -297,9 +309,10 @@ To keep it simple, for now let's say that dates can be any combination of two-tw
 1)  Can you write a regex to extract the one birthday in the sentence below?
 
 ```{r }
-sentrence_with_birthday <- "Natasha Smyth was born on 30-01-1999 and loves NLP."
+sentence_with_birthday <- "Natasha Smyth was born on 30-01-1999 and loves NLP."
 
 # write your code here
+str_extract(sentence_with_birthday, "\\d{2}-\\d{2}-\\d{4}")
 ```
 
 [hint for task 04](./hints/hint_2b_4.Rmd)
@@ -307,9 +320,10 @@ sentrence_with_birthday <- "Natasha Smyth was born on 30-01-1999 and loves NLP."
 5)  What if there was more than one birthday in the string? Here you are given another sentence - add your own birthday at the end of it, and then write code which will extract all four birthdays using a regular expression.
 
 ```{r }
-sentrence_with_many_birthdays <- "Natasha Smyth was born on 30-01-1999 and loves NLP. Her friend Pat was born on 02-01-2000 and their friend Kat was born on 13-11-1997. And your birthday is ...?"
+sentence_with_many_birthdays <- "Natasha Smyth was born on 30-01-1999 and loves NLP. Her friend Pat was born on 02-01-2000 and their friend Kat was born on 13-11-1997. And your birthday is ...?"
 
 # write your code here
+str_extract_all(sentence_with_many_birthdays, "\\d{2}-\\d{2}-\\d{4}")
 ```
 
 [hint for task 05](./hints/hint_2b_5.Rmd)
@@ -321,18 +335,25 @@ Given below string, identify in it all possible room numbers in the a hospital. 
 Try to first get the most simple cases to work, and only then engage with more difficult situations
 
 ```{r }
-string_with_some_rooms <- "potential room names are: A_23 A.1223 B-1 B.1 B.1X B.12P B.12 T.T T.T123 .12A 12A T.333T T.333A A.333A and that's all of them"
+string_with_some_rooms <- "potential room names are: B-182P BF.243R A_23 A.1223 B-1 B.1 B.1X B.12P B.12 T.T T.T123 .12A 12A T.333T T.333A A.333A and that's all of them"
 # hint: before you start writing code, first decide by hand which of the above are correct room numbers following the above key? for example, would you agree that correct room names are "B.12P T.333T T.333A"
 
 # always make a change -> run your code -> see what is still missing -> repeat
 
 # write your code here
+roomRegrex <- "([BFST]{1}\\.)(\\d{1,3})([TARP]{1})" # NB need to escape the full-stop: \\.
+str_extract_all(string_with_some_rooms, roomRegrex)
+# this extract "F.243R" from "BF.243R", which we don't want...
 
+# read the 'Note for later' paragraph... use a Lookback to make sure there's a space beforehand
+# also use a Lookahead to ensure space afterwards
+roomRegrex2 <- "(?<=\\s)([BFST]{1}\\.)(\\d{1,3})([TARP]{1})(?=\\s{1})"
+str_extract_all(string_with_some_rooms, roomRegrex2)
 ```
 
 [first hint for task 06 - how to think about this task](./hints/hint_2b_6.Rmd)
 
-[second hint for task 07 - how to start coding this task](./hints/hint_2b_7.Rmd)
+[second hint for task 06 - how to start coding this task](./hints/hint_2b_7.Rmd)
 
 ## Note for later:
 

@@ -6,7 +6,8 @@ date: "2024-09-12"
 
 # Strings in R
 
-In this notebook we will explore strings and how to manipulate strings in R. Strings are the building blocks of text data.
+In this notebook we will explore strings and how to manipulate strings in R.
+Strings are the building blocks of text data.
 
 ## Useful string tools:
 
@@ -131,7 +132,9 @@ grep('nlp', mystrings3, ignore.case ="True")
 
 ```
 
-We can also use the *stringr* package to manipulate strings and *tidyverse* has a library of possibilities and a few of which we will demonstrate below.
+We can also use the [*stringr* package](https://stringr.tidyverse.org/) to
+manipulate strings and *tidyverse* has a library of possibilities and a few of
+which we will demonstrate below.
 
 We need to make sure the libraries are installed and loaded first
 
@@ -215,6 +218,7 @@ strings4concat <-
 
 # write your code here
 
+paste(strings4concat, collapse = " ")
 ```
 
 [hint for task 01](./hints/hint_2a_1.Rmd)
@@ -223,7 +227,8 @@ strings4concat <-
 
 ```{r}
 # write your code here
-
+(icount <- str_count(strings4concat, "I"))
+sprintf("The word 'I' appears %d times", sum(icount))
 ```
 
 [hint for task 02](./hints/hint_2a_2.Rmd)
@@ -232,7 +237,8 @@ strings4concat <-
 
 ```{r}
 # write your code here
-
+(lens <- str_length(strings4concat))
+sprintf("The string is %d characters long", sum(lens))
 ```
 
 [hint for task 03](./hints/hint_2a_3.Rmd)
@@ -241,7 +247,7 @@ strings4concat <-
 
 ```{r}
 # write your code here
-
+(strings4concatpip <- str_replace(strings4concat, "Mielo", "Pippa"))
 ```
 
 [hint for task 04](./hints/hint_2a_4.Rmd)
@@ -250,7 +256,9 @@ strings4concat <-
 
 ```{r}
 # write your code here
-
+strings4concatpipexp <- c(strings4concatpip, 
+                       "I will come visit on Sunday and bring Pippa treats.")
+paste(strings4concatpipexp, collapse = " ")
 ```
 
 [hint for task 05](./hints/hint_2a_5.Rmd)
