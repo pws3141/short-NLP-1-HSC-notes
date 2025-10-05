@@ -14,7 +14,7 @@ First lets load some libraries we will need. Remember that if a library is not a
 
 Noteable system already will come pre-loaded with most of the libraries we need, but when you work on your own projects later, you will need to keep in what already installed, and what you need to install.
 
-```{r LoadLibraries}
+```{r LoadLibraries, message=FALSE}
 # first some imports:
 if (!require(readr)){
   install.packages("readr")
@@ -57,7 +57,7 @@ Why did it not match the year at the end?
 What is special about the number that did not get 'captured' by that regex? Thinking about the regular expressions you learned in Week 1 can you fix this?
 
 ```{r replace_year ANSWER}
-your_regex <- '^\\d+\\s|\\s\\d+\\s' # adjust this regex!
+your_regex <- '^\\d+\\s|\\s\\d+\\s|\\d+$' # adjust this regex!
 my_digits <- gsub(your_regex, ' DIGIT ', my_digits) #
 print(my_digits) 
 ```
@@ -71,6 +71,9 @@ First, we will use a regular expression to find URLs and replace with the term '
 Second, we will look for different abbreviations of USA and normalise these to one abbreviation type.
 
 What does regex `\S+` do?
+
+> From testing on the [regrex101 website](https://regex101.com/r/1DtLCt/1).
+> It matches any non-whitespace character (equivalent to `[^\r\n\t\f\v ]`).
 
 [HINT](./hints/hint_4_2.Rmd)
 
@@ -88,8 +91,12 @@ my_abbrev <- c("I used to live in U.S.A. but I no longer live in the US I live i
 print(my_abbrev)
 
 # looks for abbreviation of USA (U.S.A, US, U.S.) and replaces these with USA.
-my_abbrev<-gsub('(U\\.S\\.|USA|US|U\\.S\\.A\\.)',"USA", my_abbrev)
-print(my_abbrev)
+my_abbrev1 <- gsub('(U\\.S\\.|USA|US|U\\.S\\.A\\.)',"USA", my_abbrev)
+print(my_abbrev1)
+
+# trying  different way
+my_abbrev2 <- gsub('(U\\.*S\\.*|U\\.*S\\.*A\\.*)',"USA", my_abbrev)
+print(my_abbrev2)
 ```
 
 ## Punctuation
@@ -158,7 +165,7 @@ For an extra curve-ball: - if you surround regex with " you do not need to escap
 
 This is important because we want to say "each punctuation not proceeded by"
 
-```{r punc}
+```{r punc2}
 my_sentences3<-gsub("(?!')[[:punct:]]",'',my_sentences, perl=TRUE)
 my_sentences3 
 
@@ -168,6 +175,10 @@ my_sentences3 # another curve ball
 
 What happened above? Try to get it, maybe change it a bit. But also, this level of complexity is a bit beyond the scope of this badge.
 
+> I don't quite understand the lookahead above... I would expect the "(?!')" to
+mean "not followed by '", but here the "'" in "I'm" is followed by an "m", so
+I would expect it to be removed?
+
 **OK. Breathe in - breathe out. Is there a simpler way to not lose punctuation.**
 
 Let's take a step back and ask ourselves what we want to do. For example:
@@ -176,7 +187,7 @@ I want to be able to separate sentences, but not lose the exact place where they
 
 This way you could: count sentences. Split whole string into individual sentences. And much more, but without having to always refer to all the ways in which sentence can end (i.e. `?` `!` and `.`).
 
-```{r punc}
+```{r punc3}
 # let's use this regex meaning: all !?. followed by a space, or end of string. 
 # and replace them with [EOS]
 
@@ -200,6 +211,13 @@ my_string <- gsub('we\'re', 'we are', my_string)
 my_string <- gsub('something', 'something_else', my_string)
 my_string <- gsub('something22', 'something_else2', my_string)
 # ... more code here
+my_string <- gsub("won't", "will not", my_string) 
+my_string <- gsub("can't", "cannot", my_string) 
+my_string <- gsub("don't", "do not", my_string) 
+my_string <- gsub("I'm", "I am", my_string) 
+my_string <- gsub("'ve", " have", my_string) 
+my_string <- gsub("I'll", "I will", my_string) 
+my_string <- gsub("You'll", "You will", my_string) 
 
 print(my_string)
 ```
@@ -217,6 +235,14 @@ cont_string <- c(" I won't be at class tonight as I cant find my car keys.  Plea
 my_string <- gsub('something', 'something_else', cont_string)
 # ... more code here, it could also be a chain.
 # remove simple spaces first, then trickier ones!
+# replace all places with 2 or more spaces with a single space
+my_string <- gsub('\\s{2,}', ' ', my_string)
+# remove space at the beginning and end
+my_string <- gsub('^\\s+|\\s+$', '', my_string)
+# remove space after apostrophe
+my_string <- gsub('\\s*\'\\s*', '\'', my_string)
+# remove space before full stop
+my_string <- gsub('\\s+\\.', '\\.', my_string)
 
 print(my_string)
 ```
@@ -224,6 +250,8 @@ print(my_string)
 [HINTS](./hints/hint_4_4.Rmd)
 
 There is the package `cleantext` which can help with these things more automatically
+
+> the [`lares`](https://github.com/laresbernardo/lares) package looks interesting?
 
 ## Tokenisation
 
@@ -238,6 +266,13 @@ new_token_string <- str_split(token_string,"\\s+")
 print(new_token_string)
 ```
 
+> Not sure why you'd bother with the tidyverse when there's a base R version?
+
+```{r}
+strsplit(token_string, '\\s+')
+```
+
+
 Note: Here our words are 'polluted' by punctuation, like "great?". You already know how to remove punctuation using regex, and also there are several R packages that undertake text based tokenisation for you.
 
 We are going to use features from `tidyverse` and `tidytext` but there are many others out there (such as the `tm` package)
@@ -246,7 +281,7 @@ First we will load the libraries needed. (remember `install.packages("librarynam
 
 Note `tidytext` expects data to be in a tibble format.
 
-```{r load_lib}
+```{r load_lib, message=FALSE}
 if (!require(tidytext)){
   install.packages("tidytext")
 }
@@ -303,21 +338,36 @@ c("banana","kiwi","pear")  %>% nchar()
 
 OK, back to the tokens:
 
-```{r token}
+```{r token_processing}
 # The unnest_tokens function is given three arguments:
 # - the 'piped' elements of my_text_df
-# - 'word' which tells it to tokenise by single words
+# - 'word' which tells it to name the resulting column 'word'
 # - name of the column in the tibble which should be used (in our example, we called that column 'text') 
+# by default, the tokenisation is by words, but you can change that with the 'token' argument
 my_text_df %>% unnest_tokens(word,text) 
+
+# but why bother with the pipe?
+unnest_tokens(my_text_df, 
+              # output column name
+              word, 
+              # input column name
+              text,
+              # what to tokenise by (default `word`)
+              token = "words")
 ```
 
-It is possible to lowercase text and strip punctuation whilst unnesting the tokens. Punctuation is removed by default, where unnest_tokens assumes you said `strip_punct = TRUE` if you said nothing to the contrary (because it is so common). But if you actually want to keep punctuation, you need to request it specifically with `strip_punct = FALSE`.
+It is possible to lowercase text and strip
+punctuation whilst unnesting the tokens. Punctuation is removed by default,
+where unnest_tokens assumes you said `strip_punct = TRUE` if you said nothing
+to the contrary (because it is so common). But if you actually want to keep
+punctuation, you need to request it specifically with `strip_punct = FALSE`.
 
-By default `unnest_tokens` converts text to lowercase you can turn this off by `to_lower=FALSE` as an argument. This can be useful at this stage as you try to understand the data. And losing sizes of letters might hide some meanings.
+By default `unnest_tokens` converts text to lowercase you can turn this off by
+`to_lower=FALSE` as an argument. This can be useful at this stage as you try to
+understand the data. And losing sizes of letters might hide some meanings.
 
 ```{r token_lower}
-my_text_df %>%
-  unnest_tokens(word, text, to_lower = FALSE, strip_punct = TRUE)
+unnest_tokens(my_text_df, word, text, to_lower = FALSE, strip_punct = TRUE)
 ```
 
 ## N-grams: more than one word
@@ -330,7 +380,12 @@ Remember multiple words phrases are also called n-grams, where `n` represents th
 
 #tokenise by bigrams
 my_text_df %>% unnest_tokens(ngram, text, token="ngrams", n=2) 
+```
 
+> this overlapping output is a bit similar to what convolution filters do in
+convolution neutral networks
+
+```{r}
 #In this example we tokenise by sentences
 my_text_df %>% unnest_tokens(sentence, text, token="sentences") 
 
@@ -370,7 +425,9 @@ file_path <- "./data/random.txt"
 text_content <- readLines(file_path) # Read lines from the file
 single_string <- paste(text_content, collapse = " ") # Collapse the lines into a single string
 text_df <- data.frame(text = single_string, stringsAsFactors = FALSE) # First create a dataframe with one column named "text"
-text_tb <- as.tibble(text_df) # then tibble it. Notice it can be a two step process.
+text_tb <- as_tibble(list(text = single_string)) # then tibble it. Notice it can be a two step process.
+print(text_tb)
+text_tb <- as_tibble(text_df) # then tibble it. Notice it can be a two step process.
 print(text_tb)
 ```
 
@@ -381,6 +438,11 @@ Use the `%>%` pipe and `unnest_tokens` to split this tibble into cleaned up sent
 ```{r}
  #unnest the tokens to sentences, strip punctuation and lower case, like:
 # text_tb %>%  something???
+
+# nb unnest_tokens can take data.frames and tibbles:
+# it outputs in the same format as input
+unnest_tokens(text_df, sentences, text, token = "sentences")
+unnest_tokens(text_tb, sentences, text, token = "sentences")
 ```
 
 [if you are struggling after a few minutes, have a look here](./hints/hint_4_5.Rmd)

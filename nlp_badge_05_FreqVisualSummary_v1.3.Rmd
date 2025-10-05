@@ -15,7 +15,7 @@ WHEN YOU RUN THE CODE BELOW YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: 
 
 ```{r, include=FALSE}
 install.packages("pacman")
-pacman::p_load(stringr, tibble, ggraph, ggplot2, readr, dplyr, tidyverse, tidytext, purrr)
+pacman::p_load(stringr, tibble, ggraph, ggplot2, readr, dplyr, tidyverse, tidytext, purrr, data.table, lattice)
 ```
 
 ## First: Let's load some data
@@ -29,6 +29,8 @@ Corona_NLP_DF <- read.csv(file_path)
 
 #Converting into the tibble dataframe
 mydata_TB <- as_tibble(Corona_NLP_DF) 
+mydata_dt <- as.data.table(Corona_NLP_DF)
+mydata_dt
 ```
 
 ## Term Frequency
@@ -49,6 +51,15 @@ mydata_word_counts <- mydata_TB %>%
 mydata_word_counts 
 ```
 
+> Or, using data.table...
+
+```{r}
+dt_word_counts <- mydata_dt[, unnest_tokens(.SD, output = word, input = text), .SDcols = "text"
+          ][, .N, by = word
+          ][order(-N)]
+dt_word_counts 
+```
+
 ```{r count_freq1}
 #same again but this time using the group_by to group by Location column value
 mydata_words_byLocation <- mydata_TB %>%
@@ -59,6 +70,17 @@ mydata_words_byLocation <- mydata_TB %>%
 #see the output table
 mydata_words_byLocation
 ```
+
+> or, using data.table
+
+```{r}
+dt_words_location <- mydata_dt[, unnest_tokens(.SD, output = word, input = text)
+          ][, .N, by = .(Location, word)
+          ][order(Location, -N)]
+
+dt_words_location
+```
+
 
 ## Putting Word Counts into Graphs
 
@@ -73,6 +95,15 @@ mydata_word_counts %>%
   ggplot(aes(n, word)) +
   geom_col() +
   labs(y = NULL)
+```
+
+> data.table + lattice
+
+```{r}
+# barchart sorts by factor level, not data.table sorting
+# so, first, convert word to a factor and set levels based on .N
+dt_word_counts[, word := factor(word, levels = word[order(N)])]
+barchart(word ~ N, dt_word_counts[N > 350])
 ```
 
 and then
@@ -94,6 +125,20 @@ mydata_TB %>%
   coord_flip() +
   theme(legend.position="none")
 ```
+
+> data.table + lattice
+
+```{r}
+dt_top15 <- dt_words_location[, head(.SD, 15), by = Location]
+dt_top15
+barchart(word ~ N | Location, dt_top15,
+  scales = list(
+    x = list(relation = "free"),     # free x-axis scales per panel
+    y = list(relation = "free")      # free y labels per panel
+  )
+)
+```
+
 
 Here we see the most frequent words are words that likely hold no value for understanding of the text. What we called stop words in last weeks badge. (a, the, in , an)
 
