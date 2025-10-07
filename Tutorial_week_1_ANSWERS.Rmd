@@ -1,0 +1,173 @@
+# Tutorial 1: Pride, Prejudice and NLP
+
+In the first tutorial we will just try to have some fun with a text of an old book. 
+We picked a freely available copy (via guttenberg project) of "Pride and Prejudice" by English author Jane Austen from 1813.
+
+Below you will find a piece of code that loads the book. From there on, try to tackle tasks with your partner, and try to have some fun. We'd like to encourage you to switch after each task who's the driver (the person sharing their screen and typing).
+
+```{r}
+
+pride_prejudice <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
+pride_prejudice
+
+```
+
+## Task 1. Generate some basic stats about the book: number of characters, number of words, number of sentences? lines? paragrahs? or number of chapters or illustrations?
+
+Just use the string and regex skills that you have, at times you might have to be creative. Just state your assumptions in the code. e.g. 'by lines we mean anything that starts with a new line'. Or Chapter is anything with a word "chapter" followed by a number.
+
+
+--- ANSWERS:
+```{r}
+# we'll need stringer later
+library(stringr)
+```
+
+
+At first, let's just see if we can do anything with the file. Can we count the characters with `.` regex?
+
+```{r}
+str_count(pride_prejudice, ".") 
+```
+OH NO! Did you also get an ugly red error `Warning: argument is not an atomic vector; coercing[1]` ? That's because we are not telling our code exactly in which column to count the words. But since our data has only 1 column, it tries to figure it out and force it to be that one column (`coercing`).
+
+But that's not pretty... we might want to specify which column we want, because most of the time there will be many columns in our data.
+
+```{r}
+# what columns do I have?
+colnames(pride_prejudice)
+# it will say: you have one column called...
+# [1] "The.Project.Gutenberg.eBook.of.Pride.and.Prejudice"
+```
+This is a bit long, it would be a pain to always have to write the whole thing like this:
+```{r}
+str_count(pride_prejudice$The.Project.Gutenberg.eBook.of.Pride.and.Prejudice, ".") 
+```
+So, like a good data scientist, I will rename the column names to be meaningful:
+
+```{r}
+# rename first column to be called text_line
+colnames(pride_prejudice)[1] ="text_line" 
+```
+Let's count the letters again, but without warnings:
+```{r}
+str_count(pride_prejudice$text_line, ".") 
+```
+
+yay! Also, I'd prefer a single number, not a count of characters in individual likes:
+
+```{r}
+# total number of characters:
+
+number_of_characters <- sum(str_count(pride_prejudice$text_line, "."))
+number_of_characters
+# or
+
+number_of_characters <- sum(nchar(pride_prejudice$text_line)) # another way to count characters
+number_of_characters
+```
+
+```{r}
+library("stringr")
+# number of new lines
+sum(str_count(pride_prejudice$text_line, "\n"))
+# what? not enters? oh, that's because each line of a book is already split into one row! So we have 2364 lines, but anters were already removed
+```
+we could assume each row is a sentence...
+```{r}
+# number of rows in the data (so.. sentences, sort of)
+nrow(pride_prejudice)
+```
+
+
+```{r}
+# words in each sentence
+str_count(pride_prejudice$text_line, "\\w")
+# 
+  # str_count(pride_prejudice$text_line, "\\w")
+```
+
+```{r}
+# words in whole book
+  sum(str_count(pride_prejudice$text_line, "\\w"))
+```
+
+```{r}
+# but how many chapters we have? Chapters follow format " CHAPTER LXI."
+# so SPACE CHAPTER SPACE ONE_OR_MORE of characters IVXL in any order, then a DOT
+str_count(pride_prejudice$text_line, "\\sCHAPTER\\s[LXIV]+\\.")
+# and just the count
+sum(str_count(pride_prejudice$text_line, "\\sCHAPTER\\s[LXIV]+\\."))
+```
+WHAT? but there should be more chapters, there should be 61! How do I find out what I missed!? It could be something annoying like a missing space. One simple method of debugging is to replace what you hope for with something silly, like "BANANA" and inspect the data. (remember to clean it up later). When I replace chapters with the word banana, and look for whatever is left (in the data view, where you click blue box, in your Environment part of RStudio).
+```{r}
+pride_prejudice$name_replaced <- str_replace_all(pride_prejudice$text_line, "\\sCHAPTER\\s[LXIV]+\\.", "BANANA")
+```
+Now go to the Environmen > pride_prejudice and click the 'excel' icon on the right. What do you see? Search for thw word "chapter". Do you see which chapters did not become BANANA?
+
+two are missing a dot:
+- CHAPTER XIII
+- CHAPTER XIII
+
+one is written in small characters
+- Chapter XLVI.
+
+If you'd like you could adjust the regex to accept both spellings, and make the dot optional:
+```{r}
+my_chapter_regex <- "\\s(CHAPTER|Chapter)\\s[LXIV]+\\.*"
+sum(str_count(pride_prejudice$text_line,my_chapter_regex ))
+# or even, you could wrap your regex into a special regex() bracket, 
+# which allows you to specify additional features. 
+sum(str_count(pride_prejudice$text_line, regex(my_chapter_regex, ignore_case = T)))
+#
+```
+
+## Task 2. [SOMETHING] and [SOMETHING] (anonymisation by hand)
+
+We will learn more about entity recognition in the incomming badges, but could you 'anonymise' the book by replacing all names of characters with a tag like `[CHARACTER]` and maybe all places with `[LOCATION]`. If you do not know the book, here's a list of some [characters](https://en.wikipedia.org/wiki/Pride_and_Prejudice#Characters). In terms of locations you could start with "Longbourn estate", "Meryton", "Hertfordshire" and "England". But also you migth chose to 'anynymise' something completely different. How about all gerrund verbs like `...ing` as `[ACTION]` or days of the week?
+
+---
+
+Let's do two things: 
+
+- remove all the titles, like Mr. Mrs. Miss into TITLE 
+- and common surnames, into SURNAME
+
+```{r}
+# your code here. You can create more 'code cells' with a green [+c] icon on top 
+
+
+pride_prejudice$name_replaced<- str_replace(pride_prejudice$text_line, "Mr[s]*\\.\\s|\\sMiss\\s", "TITLE\\s" )
+```
+Where would you use it in practice? Eg. to remove gendered titles form a document:
+```{r}
+
+pride_prejudice$name_replaced<- gsub( "Mr[s]*\\.\\s|\\sMiss\\s", "Mx. ", pride_prejudice$text_line)
+
+```
+Now let's have a go at replacing common names with [CHARACTER]:
+
+```{r}
+# you could do it in many steps
+pride_prejudice$name_replaced<- str_replace(pride_prejudice$text_line, "Bennet", "CHARACTER" )
+pride_prejudice$name_replaced<- str_replace(pride_prejudice$text_line, "Long", "CHARACTER" )
+```
+or in a complext regex
+```{r}
+# you could do it in many steps
+pride_prejudice$name_replaced<- str_replace(pride_prejudice$text_line, "Bennet|Long", "CHARACTER" )
+```
+or if you have a long list of characters, you could truy something smart, like making your own regex on the fly:
+```{r}
+characters <- c("Mr\\.\\sBennet", "Mrs\\.\\sBennet", "Miss\\.\\sBennet", "Mrs\\.\\sLong", "Mr\\.\\sBingley")
+regex_of_many_characters <- paste(characters, collapse = "|")
+print(regex_of_many_characters) # see it!
+pride_prejudice$name_replaced<- str_replace(pride_prejudice$text_line, regex_of_many_characters, "CHARACTER" )
+```
+
+ 
+## Task 3. What other skills from badges 1,2 and 3 could you use here? What else could you achieve in a large text like this with regex?
+
+```{r}
+# your code here. You can create more 'code cells' with a green [+c] icon on top 
+```
