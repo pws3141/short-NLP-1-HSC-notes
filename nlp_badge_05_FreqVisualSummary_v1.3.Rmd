@@ -129,20 +129,30 @@ mydata_TB %>%
 > data.table + lattice
 
 ```{r}
-dt_top15 <- dt_words_location[, head(.SD, 15), by = Location]
-dt_top15
-barchart(word ~ N | Location, dt_top15,
-  scales = list(
-    x = list(relation = "free"),     # free x-axis scales per panel
-    y = list(relation = "free")      # free y labels per panel
-  )
-)
+#| layout-ncol: 2
+
+dt_top15_uk <- dt_words_location[Location == "UK", head(.SD, 15)
+                                 ][, word := factor(word, levels = word[order(N)])]
+dt_top15_usa <- dt_words_location[Location == "USA", head(.SD, 15)
+                                 ][, word := factor(word, levels = word[order(N)])]
+barchart(word ~ N, dt_top15_uk, main = "UK")
+barchart(word ~ N, dt_top15_usa, main = "USA")
+```
+
+> nb: this slightly convoluted method is to allow for separate ordering of the two bar charts. Can merge into one without proper ordering as follows:
+
+```{r}
+barchart(word ~ N | Location, dt_words_location[, head(.SD, 15), by = Location],
+         scales = list(x = list(relation = "free")))
+                       #y = list(relation = "free")))
 ```
 
 
 Here we see the most frequent words are words that likely hold no value for understanding of the text. What we called stop words in last weeks badge. (a, the, in , an)
 
 We can use the built in options of `tidyverse` to remove the stop words. `anti_join` is the function and we give it an input of `stop_words`.
+
+> `stop_words` is a dataset from the `tidytext` package that contains a list of common stop words in English.
 
 Run the code and see the difference in the frequent words compared to the graph above.
 
@@ -165,6 +175,29 @@ mydata_TB %>%
   coord_flip() +
   theme(legend.position="none")
 ```
+ > data.table + lattice
+
+```{r}
+#| layout-ncol: 2
+
+dt_words_location_stop <- dt_words_location[!word %in% stop_words$word]
+dt_top15_stop_uk <- dt_words_location_stop[Location == "UK", head(.SD, 15)
+                                 ][, word := factor(word, levels = word[order(N)])]
+dt_top15_stop_usa <- dt_words_location_stop[Location == "USA", head(.SD, 15)
+                                 ][, word := factor(word, levels = word[order(N)])]
+barchart(word ~ N, dt_top15_stop_uk, main = "UK")
+barchart(word ~ N, dt_top15_stop_usa, main = "USA")
+```
+
+> and the simpler (non-ordered) method...
+
+```{r}
+dt_words_location_stop <- dt_words_location[!word %in% stop_words$word,
+                                            head(.SD, 15), by = Location]
+barchart(word ~ N | Location, dt_words_location_stop,
+         scales = list(x = list(relation = "free")))
+                       #y = list(relation = "free")))
+```
 
 ## ACTIVITY: Using your own 'excluded words'
 
@@ -176,6 +209,10 @@ As your solution, copy the code above, and add an extra line after `anti_join(st
 
 ```{r}
 # your solution here
+dt_words_location_stop2 <- dt_words_location[!word %in% c(stop_words$word, "covid", "store", "panic", "grocery"),
+                                             head(.SD, 15), by = Location]
+barchart(word ~ N | Location, dt_words_location_stop2,
+         scales = list(x = list(relation = "free")))
 ```
 
 [Hint 1 about the filter() - how does it work](./hints/hint_5_1.Rmd) [Hint 2 about the filter() - how to use it with collections](./hints/hint_5_2.Rmd)
@@ -226,13 +263,26 @@ mydata_word_freq %>%
   arrange(desc(tf_idf))
 ```
 
+> using data.table
+
+```{r}
+word_freq <- mydata_dt[, unnest_tokens(.SD, output = word, input = text)
+          ][!word %in% stop_words$word
+          ][, .(n = .N), by = .(Location, word)
+          ][, bind_tf_idf(.SD, word, Location, n)
+          ][order(-tf_idf)]
+          
+
+word_freq
+```
+
+
 ## WordClouds
 
 Let's load the libraries we need:
 
 ```{r}
 #Load the required libraries (this is a simpler version, but you can use the fancy one from above)
-install.packages("pacman")
 pacman::p_load(wordcloud, wordcloud2, RColorBrewer)
 ```
 
@@ -254,6 +304,21 @@ words <- cloud_words %>% count(word, sort=TRUE)
 print(words)
 ```
 
+> data.table
+
+```{r}
+cloud_words <- mydata_dt[, unnest_tokens(.SD, output = word, input = text)
+                 ][
+                    !word %in% stop_words$word
+                 ][
+                    , .(n = .N), by = word
+                 ]
+
+
+
+```
+
+
 Now that we have words, let's feed them into the wordcloud:
 
 ```{r wordcloud1}
@@ -261,8 +326,8 @@ set.seed(1234) # see note below abotu seeds. Run this a few times with this line
 
 #Now lets draw the word cloud
 wordcloud(
-  words = words$word,
-  freq = words$n,
+  words = cloud_words[, word],
+  freq = cloud_words[, n],
   min.freq = 50,
   max.words = 200,
   random.order = FALSE,
@@ -285,6 +350,43 @@ Can you repeat this for ngrams of 2, rather than just single words? Look through
 
 ```{r}
 # write your code here
+cloud_bigram <- mydata_dt[, unnest_tokens(.SD, output = bigram, input = text,
+                                         token="ngrams", n=2)
+                ][
+                    #!word %in% stop_words$word
+                #][
+                    , .(n = .N), by = bigram
+                ]
+
+set.seed(10)
+wordcloud(
+  words = cloud_bigram[, bigram],
+  freq = cloud_bigram[, n],
+  min.freq = 50,
+  max.words = 200,
+  random.order = FALSE,
+  rot.per = 0.35,
+  colors = brewer.pal(8, "Dark2")
+)
+
+# what about removing stop words?
+
+cloud_bigram_stop <- cloud_bigram[
+                          , c("word1", "word2") := tstrsplit(bigram, "\\s+")
+                          ][
+                          !(word1 %in% stop_words$word|word2 %in% stop_words$word)
+                          ]
+
+set.seed(10)
+wordcloud(
+  words = cloud_bigram_stop[, bigram],
+  freq = cloud_bigram_stop[, n],
+  min.freq = 20,
+  max.words = 200,
+  random.order = FALSE,
+  rot.per = 0.35,
+  colors = brewer.pal(8, "Dark2")
+)
 ```
 
 Only if you've already tried for 5+ minutes, you can see below for some hints. But please use the help function to see other options. It's also worth googling on R wordclouds to see examples
