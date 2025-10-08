@@ -1,0 +1,101 @@
+# Tutorial 2: Pride, Prejudice and MORE ADVANCED NLP
+
+In the second tutorial we will again try to have some fun with a text of an old book, but this tikme we will use new set of tools we picjked up in week 2.
+Again as text we picked a freely available copy (via guttenberg project) of "Pride and Prejudice" by English author Jane Austen from 1813.
+
+Below you will find a piece of code that loads the book. From there on, try to tackle tasks with your partner, and try to have some fun. We'd like to encourage you to switch after each task who's the driver (the person sharing their screen and typing).
+
+```{r}
+# IF ASKED ABOTU RESTARTING R SAY: NO
+install.packages("pacman")
+pacman::p_load(dplyr, stringr, udpipe, lattice, tidytext, readr, SnowballC, textstem, syuzhet, igraph, tidyr, ggraph)
+
+```
+and now the data:
+```{r}
+pride_prejudice_raw_text <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
+colnames(pride_prejudice_raw_text)[1] ="text_line" 
+pride_prejudice <- as_tibble(pride_prejudice_raw_text) 
+
+
+```
+
+## Task 1. Nothing that happens, happens only once! (N-grams)
+
+What n-grams are common in this text? What are common 2- and 3-word phrases you see? (badge 4)
+
+```{r}
+# your code here. You can create more 'code cells' with a green [+c] icon on top 
+
+```
+
+## Task 2. When you stare at the clouds... the clouds stare back at you! (word frequency and wordclouds)
+
+Look at the common words, and remove those that you do not feel to be meaningful. Then visualise the popular ones with a wordcoud (badge 5)
+
+```{r}
+# your code here. You can create more 'code cells' with a green [+c] icon on top 
+```
+ 
+## Task 3. Pride and Adjectives
+
+Looking at the POS taggin in this text, what can you deduce about language used in it? (badge 6)
+
+Can you try to identify the most common Adjectives? 
+
+We are getting you started here. Have a look at the code, and think of next steps...
+
+```{r}
+# your code here. You can create more 'code cells' with a green [+c] icon on top 
+```
+
+
+
+```{r}
+model_eng_ewt   <- udpipe_download_model(language = "english-ewt", overwrite = FALSE)
+model_eng_ewt_path <- model_eng_ewt$file_model
+
+#To load our downloaded model, use the udpipe_load_model() function:
+
+model_eng_ewt_loaded <- udpipe_load_model(file = model_eng_ewt_path)
+
+#Creating a text variable 
+text <- pride_prejudice$text_line %>% str_squish()
+
+#Annotate data - this may take a moment, like a MINUTE OR TWO
+text_annotated <- udpipe_annotate(model_eng_ewt_loaded, x = text) %>%
+  as.data.frame() 
+```
+
+and let's see it:
+
+```{r}
+    
+#look at text_annotated - look at the extra columns upos and xpos give you the POS tags, 
+tibble::view(text_annotated)
+```
+
+If we look at adjectives, let's imagine this scenario: Look at the most common adjectives, and find out what they describe. Btw: what other option than ADJ are there? [https://universaldependencies.org/u/pos/index.html](https://universaldependencies.org/u/pos/index.html)
+
+Btw, did you know that in R you can use . in the middle of a variable name? like `student.names.shortened` or `freq.distribution.upos`?
+
+```{r}
+# count parts of speech
+freq.distribution.upos <-
+  txt_freq(text_annotated$upos)
+
+freq.distribution.upos$key <-
+  factor(freq.distribution.upos$key,
+         levels = rev(freq.distribution.upos$key))
+
+verb <- subset(text_annotated, upos %in% c("VERB"))
+
+verb <- txt_freq(verb$token)
+
+verb$key <- factor(verb$key, levels = rev(verb$key))
+
+popular_verbs <- verb$key %>% head(10)
+popular_verbs
+```
+
+... what else can you find?
