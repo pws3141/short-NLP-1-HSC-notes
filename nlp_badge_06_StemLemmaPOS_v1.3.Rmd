@@ -17,7 +17,7 @@ WHEN YOU RUN THE CODE BELOW YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: 
 
 ```{r load_library}
 # for all packages we need:
-install.packages("pacman")
+#install.packages("pacman")
 pacman::p_load(dplyr, stringr, udpipe, lattice, tidytext, readr, SnowballC, textstem)
 ```
 
@@ -103,7 +103,7 @@ lemmatize_words(vector) # takes collection of words!
 
 Luckily for us, lemmatize_strings can be applied to whole sentences (and will get the lemmas of each individual words by itself).
 
-```{r Lemmas}
+```{r Lemmas2}
 my_text_about_cats <- c("My cat is tired today. She is sleeping on her mat in the sun. She is dreaming about running and eating now. She usually wakes when she is hungry.")
 
 lemmatize_strings(my_text_about_cats) # takes whole sentences (and can take many)
@@ -166,7 +166,7 @@ text_annotated <- udpipe_annotate(model_eng_ewt_loaded, x = text) %>%
       as.data.frame() 
     
 #look at text_annotated - look at the extra columns upos and xpos give you the POS tags, 
-view(text_annotated)
+text_annotated
  
 ```
 
@@ -189,7 +189,7 @@ print(freq)
 
 and now let's visualise that data:
 
-```{r POS_stats}
+```{r POS_stats2}
 #Create a barcharts to look at the frequencies of upos types of POS tags
 freq.distribution.upos <-
   txt_freq(text_annotated$upos)

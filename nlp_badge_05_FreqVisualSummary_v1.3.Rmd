@@ -1,8 +1,7 @@
 ---
 title: "Badge 5 - Word Frequency, Summarising and Visualising your data"
-output:
-  html_document:
-    df_print: paged
+output: html_document
+    #df_print: paged
 ---
 
 # Word Frequency, Summarising and Visualising your data
@@ -14,8 +13,9 @@ So basically, less of that `install.packages(package_name)` and `library(package
 WHEN YOU RUN THE CODE BELOW YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
 
 ```{r, include=FALSE}
-install.packages("pacman")
-pacman::p_load(stringr, tibble, ggraph, ggplot2, readr, dplyr, tidyverse, tidytext, purrr, data.table, lattice)
+#install.packages("pacman")
+pacman::p_load(stringr, tibble, ggraph, ggplot2, readr, dplyr, 
+               tidyverse, tidytext, purrr, data.table, lattice)
 ```
 
 ## First: Let's load some data
@@ -142,9 +142,9 @@ barchart(word ~ N, dt_top15_usa, main = "USA")
 > nb: this slightly convoluted method is to allow for separate ordering of the two bar charts. Can merge into one without proper ordering as follows:
 
 ```{r}
-barchart(word ~ N | Location, dt_words_location[, head(.SD, 15), by = Location],
+barchart(word ~ N | Location, 
+         dt_words_location[, head(.SD, 15), by = Location],
          scales = list(x = list(relation = "free")))
-                       #y = list(relation = "free")))
 ```
 
 
@@ -353,8 +353,6 @@ Can you repeat this for ngrams of 2, rather than just single words? Look through
 cloud_bigram <- mydata_dt[, unnest_tokens(.SD, output = bigram, input = text,
                                          token="ngrams", n=2)
                 ][
-                    #!word %in% stop_words$word
-                #][
                     , .(n = .N), by = bigram
                 ]
 
@@ -370,6 +368,7 @@ wordcloud(
 )
 
 # what about removing stop words?
+# split into 'word1' and 'word2' and remove if either of these words are a 'stop word'
 
 cloud_bigram_stop <- cloud_bigram[
                           , c("word1", "word2") := tstrsplit(bigram, "\\s+")
@@ -438,6 +437,25 @@ bigram_graph <- mydata_words_bigrams %>%
 #Show the word co-occurances: these are words happening immediately next to each other frequently:
 bigram_graph
 ```
+
+> using data.table
+
+```{r}
+bigrams <- as.data.table(mydata_dt[, unnest_tokens(.SD, output = bigram, input = text,
+                                         token="ngrams", n=2)
+                ])
+
+bigrams[
+          , c("word1", "word2") := tstrsplit(bigram, "\\s+")
+        ][
+          !(word1 %in% stop_words$word|word2 %in% stop_words$word), .(n = .N), by = bigram
+        ][n > 20][order(-n)]
+
+bigram_graph <- graph_from_data_frame(bigrams)
+bigram_graph
+```
+
+
 
 ## Visual connections of Words
 

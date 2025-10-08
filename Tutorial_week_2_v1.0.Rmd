@@ -7,7 +7,7 @@ Below you will find a piece of code that loads the book. From there on, try to t
 
 ```{r}
 # IF ASKED ABOTU RESTARTING R SAY: NO
-install.packages("pacman")
+#install.packages("pacman")
 pacman::p_load(dplyr, stringr, udpipe, lattice, tidytext, readr, SnowballC, textstem, syuzhet, igraph, tidyr, ggraph)
 
 ```
@@ -16,7 +16,7 @@ and now the data:
 pride_prejudice_raw_text <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
 colnames(pride_prejudice_raw_text)[1] ="text_line" 
 pride_prejudice <- as_tibble(pride_prejudice_raw_text) 
-
+pp <- as.data.table(pride_prejudice)
 
 ```
 
@@ -26,7 +26,9 @@ What n-grams are common in this text? What are common 2- and 3-word phrases you 
 
 ```{r}
 # your code here. You can create more 'code cells' with a green [+c] icon on top 
-
+pp_bigram <- pp
+    [, unnest_tokens(.SD, word, text_line, token = "ngrams", n = 2)
+    ]
 ```
 
 ## Task 2. When you stare at the clouds... the clouds stare back at you! (word frequency and wordclouds)
@@ -35,6 +37,23 @@ Look at the common words, and remove those that you do not feel to be meaningful
 
 ```{r}
 # your code here. You can create more 'code cells' with a green [+c] icon on top 
+pp_words <- pp[
+  , unnest_tokens(.SD, word, text_line)
+  ][
+    !word %in% stop_words$word
+  ][
+    ,.N, by = word
+  ][order(-N)]
+
+wordcloud(
+  words = pp_words[, word],
+  freq = pp_words[, N],
+  min.freq = 50,
+  max.words = 200,
+  random.order = FALSE,
+  rot.per = 0.35,
+  colors = brewer.pal(8, "Dark2")
+)
 ```
  
 ## Task 3. Pride and Adjectives
@@ -46,12 +65,6 @@ Can you try to identify the most common Adjectives?
 We are getting you started here. Have a look at the code, and think of next steps...
 
 ```{r}
-# your code here. You can create more 'code cells' with a green [+c] icon on top 
-```
-
-
-
-```{r}
 model_eng_ewt   <- udpipe_download_model(language = "english-ewt", overwrite = FALSE)
 model_eng_ewt_path <- model_eng_ewt$file_model
 
@@ -60,11 +73,13 @@ model_eng_ewt_path <- model_eng_ewt$file_model
 model_eng_ewt_loaded <- udpipe_load_model(file = model_eng_ewt_path)
 
 #Creating a text variable 
-text <- pride_prejudice$text_line %>% str_squish()
+text <- pride_prejudice$text_line %>% 
+        str_squish() # removes whitespace at the start and end, and replaces all internal whitespace with a single space
 
 #Annotate data - this may take a moment, like a MINUTE OR TWO
 text_annotated <- udpipe_annotate(model_eng_ewt_loaded, x = text) %>%
   as.data.frame() 
+
 ```
 
 and let's see it:
@@ -72,7 +87,22 @@ and let's see it:
 ```{r}
     
 #look at text_annotated - look at the extra columns upos and xpos give you the POS tags, 
-tibble::view(text_annotated)
+#tibble::view(text_annotated)
+```
+
+
+```{r}
+# your code here. You can create more 'code cells' with a green [+c] icon on top 
+
+# look at the different adjs, nouns etc.
+text_annotated |>
+  count(upos, sort = TRUE)
+
+# just look at the commen adjectives
+text_annotated |>
+  filter(upos == "ADV") |>
+  count(lemma, sort = TRUE) |>
+  top_n(20)
 ```
 
 If we look at adjectives, let's imagine this scenario: Look at the most common adjectives, and find out what they describe. Btw: what other option than ADJ are there? [https://universaldependencies.org/u/pos/index.html](https://universaldependencies.org/u/pos/index.html)
@@ -94,8 +124,17 @@ verb <- txt_freq(verb$token)
 
 verb$key <- factor(verb$key, levels = rev(verb$key))
 
-popular_verbs <- verb$key %>% head(10)
+
+popular_verbs <- verb %>% head(10)
 popular_verbs
+
+barchart(key ~ freq, data = popular_verbs)
+```
+```{r}
+ggplot(popular_verbs, aes(x = key, y = freq)) +
+  geom_col() +
+  coord_flip() +
+  theme_minimal()
 ```
 
 ... what else can you find?
