@@ -1,0 +1,391 @@
+---
+title: "Badge 8 Named Entity Recognition"
+output: html_notebook
+---
+
+# Named Entity Recognition
+
+In this notebook we will try a few tools for recognising entities (places, people, etc). You will notice that sometimes the tools work really well, and sometimes they do not. We will look at ways to cleanup data, but also we might later look at ways to pick the most appropriate model for the task at hand.
+
+## Pipes! All the Pipes!
+
+You already noticed that while we learn about NLP we also experience some new advanced elements of R language. You already know `%>%` pipe, but recently R community is using more and more a simpler (ubt just as powerful) syntax for a pipe `|>`. It is made of two symbols: a vertical line `|` (which depending on your keyboard could be on the very right-hand-side, or very left-hand-side) and the larger-than symbol `>`. 
+
+You can use `|>` pipe in the same way as `%>%`. But some very advanced uses are different.
+
+Additionally you can import a number of other special pipes. Further down in this notebook we will import from `magrittr` an 'self-assignment' pipe. So that instead of saying `students <- students `
+
+```{r, include=FALSE}
+install.packages("pacman")
+pacman::p_load(magrittr)
+```
+
+now we have this new pipe, so `people <- people %>%  transform(...` can become `people %<>% transform(... ` because `%<>%` pipe means, **apply this pipe to yourself**
+
+```{r}
+
+people <- data.frame(
+  name = c("Alice", "Vikkie", "Pim")
+)
+people <- people %>% transform( 
+   name_length= nchar(name)) 
+people
+
+people %<>% transform( 
+   name_length= nchar(name)) 
+people
+```
+
+You can read about it some other time, but for now, let's get back to NLP:
+
+## Additional data imported with packages (eg. gapminder for country codes)
+
+We are going to look at a couple different NER packages that we can use Out-Of-the-Box. The first two examples are using lexicons to find and match against tokens in our text.
+
+First we need to load a lexicon to use to find entities in our text. We are going to use a list of countries from the package *gapminder.* The is a data package with a subset from the Gapminder data. The provides gapminder data in a data frame or “tibble”. There are other aspects, such as pre-made color schemes for the countries and continents, and ISO 3166-1 country codes.
+
+Let's load the libraries we need. and then take a look with *head* to see what is in the countries list.
+
+```{r load_library , include=FALSE}
+# WHEN YOU RUN THIS CODE, YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
+# for all packages we need:
+install.packages("pacman")
+pacman::p_load(tidyverse, rvest, glue, stringr, gapminder)
+```
+
+```{r}
+#Gapminder package will give us a lexicon of countries
+country_codes |> head(10)
+```
+
+We will load our Corona data into a data frame and then create a string from our Corona dataframe `text` column and then look for any country mentions.
+
+We use `str_flatten` to create a string from our column text data. `str_flatten` reduces a character vector to a single string - it is concatenating all the strings in the text column to a single sting.
+
+```{r}
+#Load the corona csv to a datframe
+file_path='./data/CORONA_TWEETS.csv'
+Corona_NLP_DF <- read.csv(file_path, stringsAsFactors =FALSE, header=TRUE)
+#Creating a str from our Corona data text column
+corona_text <- Corona_NLP_DF$text |>
+  str_flatten()
+```
+
+Below `country_codes` comes from loading the gapminder package. We use mutate to create an extra column called `times_mentioned` and use the `str_count` function to look for the country.
+Then with filter if a country is not mentioned we filter it out.
+
+```{r}
+country_counts_just_words <- country_codes |>
+  mutate(times_mentioned = str_count(corona_text, country)) |>
+  filter(times_mentioned > 0)
+
+#here we are rearranging country_counts_just_words by desc order of times mentioned
+country_counts_just_words_ordered <- country_counts_just_words |>
+  arrange(desc(times_mentioned))
+
+country_counts_just_words_ordered
+```
+
+This time we are going to use the `lexicon` package to get a list of `names` to look for in our data.
+
+Activity: Google the `R lexicon package` to see other lexicon options this package has to offer. 
+
+[Also useful is the github page](https://github.com/trinker/lexicon)
+
+Let's load the required package - you may need to install lexicon first.
+
+```{r, include=FALSE}
+
+pacman::p_load_gh("trinker/lexicon") #First load lexicon package from their sourcecode on github with p_load_gh
+pacman::p_load(lexicon, dplyr, stringr) # then we can use pacman as usual
+
+# If you were not using pacman, you'd load required packages like this:
+# library(lexicon)
+# library(dplyr)
+# library(stringr)
+```
+
+The first thing we are doing is creating a data frame of common names. We are taking these from the `freq_first name` and *freq_last_name* lexicons and converting them into data frames. Click on the dataframes in the environment to see their content.
+
+```{r}
+# Load frequent first names dataset
+data("freq_first_names", package = "lexicon")
+# Convert common_names to a dataframe if it is a list
+if (is.list(freq_first_names)) {
+  freq_first_names <- as.data.frame(freq_first_names)
+}
+
+# Load last names dataset
+data("freq_last_names", package = "lexicon")
+# Convert common_names to a dataframe if it is a list
+if (is.list(freq_last_names)) {
+  freq_last_names <- as.data.frame(freq_last_names)
+}
+```
+
+In this next codeblock we are reframing the first and last names and renaming the columns.\
+Then we combine them into one list of names and convert them into a vector.
+
+We will use this `vector of names` when trying to find names in our text.
+
+```{r}
+
+# Rename columns for consistency and add a column to specify name type
+first_names <- freq_first_names %>%
+  rename(name = Name) %>%
+  select(name) %>%
+  mutate(type = "first_name")
+
+last_names <- freq_last_names %>%
+  rename(name = Surname) %>%
+  select(name) %>%
+  mutate(type = "last_name")
+
+# Combine first and last names and remove duplicates
+all_names <- bind_rows(first_names, last_names) %>%
+  distinct(name, .keep_all = TRUE)
+
+#Creating a vector of unique names to compare against
+names <- unique(c(all_names$name))
+```
+
+Now we are ready to compare our Names list to our text column in the Corona tweets dataframe. to do this we will:
+
+1)  Tokenize the input - Corona text string - into words
+
+2)  Check if any of the tokenized words match the list of names we have
+
+3)  If there is a match this is set to the return value for the column and put in in our Corona tweets data frame
+
+```{r}
+# Function to find names in text
+find_names <- function(text) {
+  # Split the text into words
+ # words <- str_split(text, "\\s+")[[1]]
+  words <-unlist(strsplit(text, "\\s+"))
+  matched_names=""
+  # Check if any words are in the names list
+  matched_names <- words[words %in% names]
+
+  # Return matched names or NA if no match
+  if (length(matched_names) > 0) {
+    return(paste(matched_names, collapse = ", "))
+  } else {
+    return(NA)
+  }
+}
+
+# Apply the function to the text column in our dataframe
+Corona_NLP_DF<- Corona_NLP_DF %>%
+  rowwise() %>%
+  mutate(matched_names = find_names(text))
+```
+
+## ACTIVITY: Review the matched_names column in  Corona_NLP_DF 
+
+What sort of problems can you see? Can you think of any ways to fix these? In this activity you;re not asked to actually fix it, just look at the data and write down what you can think of.
+
+*You can write your findings here*
+
+
+
+After you wrote down some thoughts, have a look at the [HINT: Answer](./hints/hint_8_1.Rmd)
+
+
+## NER with pre-trained models
+
+Next we are going to use some available models that have been pre-trained. We will use `nametagger` and `entity` package
+
+`nametagger` allows you to find and extract entities (names, persons, locations, addresses, ...) in raw text. You can also train and build your own entity recognition models with this package. The model is based on a maximum entropy Markov model.
+
+You can google `R package nametagger` to read more about it.
+
+```{r}
+pacman::p_load(nametagger) # then we can use pacman as usual
+
+#we need to download the model - we create a directory to put the model in then download the english-conll model.
+dir.create("models")
+nametagger_model <- nametagger_download_model("english-conll-140408", model_dir = "models")
+
+#we create a function to run the entity tagger
+extract_entities <- function(text) {
+  result <- predict(nametagger_model, text, split = '\\s+')  
+  # Use mutate to create the merged column and select to keep only that column
+  result
+}
+
+show_only_recognised <- function(entities){
+  entities %>%
+    filter(entity != 'O') %>%
+    mutate(full_name = paste(term, entity, sep = "/")) %>%
+    summarize(all_names = paste(full_name, collapse = ", "))  # Combine into a single string
+}
+
+#Create a text string and run it through the nametagger function
+text ="Hello I am Mary and this is Paul who lives in Scotland. We work as teachers.  We have a cat Meilo and she is a tabby. Scotland is cold and rainy in the winter but I like Scotland"
+entities_in_word <- extract_entities(text)
+entities_in_word
+show_only_recognised(entities_in_word)
+
+text ="Hello I am Paul and this is Fred we live in Scotland. We work as school teachers.  We have a cat called Bob and he is a tabby. Scotland is cold and rainy in the winter but I like Scotland."
+entities_in_word <- extract_entities(text)
+entities_in_word
+show_only_recognised(entities_in_word)
+```
+
+## ACTIVITY: What do you notice about the outputs of above two sentences?
+
+Look carefully at the outpits of above code. Two sentences provide slightly different outputs of the named entity recognition. Why do you think it finds some names and locations and not others?
+
+Can you do any preprocessing that may help? Try doing it by hand (literally scroll up and change the sentences, re-run the code and see if things improved). Do you feel this process of cleaning up like this could be automated?
+
+[HINT: Answer](./hints/hint_8_2.Rmd)
+
+
+## NER tagging with `entity` package
+
+We are now going to use a package called `entity` to do some NER tagging. This package `entity` is interesting, because it combines other packages, it's a wrapper to simplify and extend [NLP package](https://cran.r-project.org/web/packages/NLP/index.html) and [openNLP package](https://cran.r-project.org/web/packages/openNLP/index.html) both used for named entity recognition.
+
+The `entity` package contains 6 entity extractors that take a text vector and return a list of vectors of named entities.
+
+The entity extractors include:
+
+1.  `person_entity`
+
+2.  `location_entity`
+
+3.  `organization_entity`
+
+4.  `date_entity`
+
+5.  `money_entity`
+
+6.  `percent_entity`
+
+First lets install and load the libraries we need. This involves downloading a compressed file (.zip or .tar.gz) and decompressing it.
+
+```{r , include=FALSE}
+pacman::p_load_gh("trinker/entity")
+pacman::p_load(entity, magrittr, tidytext, dplyr, tidyr)
+# also we need to download some data:
+```
+
+We will first look at the inbuilt `wiki` data to see person entities. If it asks you to install packages select yes. This may take a few moments to run if it needs to download.
+
+```{r}
+# NOTE! at this point RStudio might ask you a question in 'Console' area at the bottom of your screen.
+# Go there and type 'Yes' and click Enter. It will start installing a large-ish file (74.2 MB), which will take 2-3 minutes
+
+#call the data
+data(wiki)
+#ask the entity package to tag the data wiki for persons
+person_entity(wiki)
+```
+
+
+Lets call the entity tagger on our Corona tweet data.
+
+We create a new column for our data frame called 'Loc' and we call the location_entity function with the 'text' column as input. It will take a minute.
+
+```{r}
+Corona_NLP_DF$Loc<-location_entity(Corona_NLP_DF$text)
+```
+
+
+Now we are going to create a separate data frame for Locations and count the number of times each country occurs.
+
+```{r}
+#First we add a column for row number
+Corona_NLP_DF %<>% mutate(row = row_number())
+
+#Now we create a datframe, first removing any columns with NULL as Location and then unnest the entries where there are multiple countries in a tweet.
+country_counts_from_recogniser  <- Corona_NLP_DF %>% 
+  filter(!is.null(Loc)) %>%
+  unnest(Loc) %>%
+  select(c(Loc, row))
+
+country_counts_from_recogniser_ordered<-country_counts_from_recogniser  %>% 
+  count(Loc)  %>% 
+  arrange(desc(n)) 
+#different way to do the count above 
+#country_counts_from_recogniser_ordered <- country_counts_from_recogniser %>% group_by(Loc) %>% count()
+country_counts_from_recogniser_ordered
+```
+
+## ACTIVITY: Take a look at the two dataframes above `country_counts_just_words_ordered` and `country_counts_from_recogniser_ordered`
+
+`country_counts_just_words_ordered` is the one you made at the top of this exercise with the lexicon from gapminder.
+`country_counts_from_recogniser_ordered` you created now. Can you spot the differences between them. Neither are perfect.
+
+```{r}
+# run this to see them one next to another
+country_counts_just_words_ordered
+country_counts_from_recogniser_ordered
+```
+## ACTIVITY: Finding people with person_entity
+
+Repeat the steps above for the names. Hint use person_entity()
+
+
+```{r answer}
+#  your code here
+```
+
+[Hint: Answer](./hints/hint_8_4.Rmd)
+
+## But... why does it sometimes not work very well?
+
+Main reason why NLP tools do not work is the context: if a model was trained on medical data, it will not perform well on tweets, and the other way around.
+
+Just before we finish this notebook, let's use the person recognition tool on a text of a nover:
+
+
+```{r answer}
+#  your code here
+pride_prejudice <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
+colnames(pride_prejudice)[1] ="text_line" 
+
+pride_prejudice$Name<-person_entity(pride_prejudice$text_line)
+
+#add row number 
+pride_prejudice %<>% mutate(row = row_number())
+
+#creating a names data frame with collapsed list: locations_df
+names_pp  <- pride_prejudice %>% 
+  filter(!is.null(Name)) %>%
+  unnest(Name) %>%
+  select(c(Name, row))
+
+ordered_names_pp<- names_pp |>
+  count(Name) |>
+  arrange(desc(n)) 
+
+ordered_names_pp
+```
+WOW! notice that this is much better. There is still improvement, since eg. name `Elizabeth` got recognised 435 times but it actually occures in text 634 times, but it could be the case that we need to perform a few extra steps, like text cleanup. What is amazing here, is that we did not have to specify all characters ahead of time!
+
+```{r}
+# try few other names, which ones are closest to perfect? Are they all recognised roughly 50% of times?
+
+name_we_look_for <- "Elizabeth"
+
+# count words
+sum(str_count (pride_prejudice$text_line, name_we_look_for))
+
+# auto recognition
+result <- ordered_names_pp %>%
+  filter(Name == name_we_look_for) %>%
+  select(n)
+result
+```
+
+
+
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.
+
+# Conclusion:
+
+Now we have looked at identifying Named Entities in the data. You've seen packages that can be used for it, and some of their limitations and power. One thing that is very clear is: THESE ARE NOT VERY SUITABLE. Or at least not for this data.  
