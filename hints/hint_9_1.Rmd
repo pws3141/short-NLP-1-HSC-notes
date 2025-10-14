@@ -1,0 +1,30 @@
+```{r}
+# NOTE: you might be asked for something in the "Console" area of RStudio. Just say Yes.
+
+sentimental_words <- get_sentiments("nrc") %>% 
+  filter(sentiment == "anger")
+
+sentimental_words
+```
+ok, but what's in afinn?
+```{r}
+# NOTE: you might be asked for something in the "Console" area of RStudio. Just say Yes.
+
+affin_words <- get_sentiments("afinn")
+affin_words
+
+affin_words_really_high <- affin_words %>% 
+  filter(value < 4 )
+
+affin_words_really_high
+```
+
+AMAZING! so we have positive words. I'm guessing there will not be very many of those in Covid-related tweets:
+
+```{r}
+corona_great_mood <-corona_words %>%s
+  inner_join(affin_words_really_high) %>%
+  count(word, sort = TRUE)
+
+corona_great_mood
+```

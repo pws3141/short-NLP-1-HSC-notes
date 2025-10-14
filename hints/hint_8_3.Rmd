@@ -1,0 +1,23 @@
+
+```{r answer}
+
+Corona_NLP_DF$Name<-person_entity(Corona_NLP_DF$text)
+
+#add row number 
+Corona_NLP_DF %<>% mutate(row = row_number())
+
+#creating a names data frame with collapsed list: locations_df
+names_df  <- Corona_NLP_DF %>% 
+  {.[!sapply(.$Name, is.null), ]} %>%
+  unnest(Name) %>%
+  select(c(Name, row))
+
+#create and clean distinct dataframe with counts: locs_dist
+ordered_names<-names_df |>
+  count(Name) |>
+  arrange(desc(n)) 
+
+#Alternative way to do above
+#ordered_names<- names_df %>% group_by(Name) %>% count()
+
+```

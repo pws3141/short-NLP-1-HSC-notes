@@ -1,0 +1,13 @@
+```{r}
+some_words <- data.frame(word = c("sick", "unwell", "ill", "ailing"))
+some_words_connections <- apply(some_words, 1, get_connected_words, glove_matrix)
+
+words_flat <- table(as.vector(some_words_connections))
+word_counts_df <- as.data.frame(words_flat, stringsAsFactors = FALSE)
+colnames(word_counts_df) <- c("word", "count")
+
+word_counts_df %>%
+	arrange(desc(count)) %>%  
+  slice(1:40)
+```
+
