@@ -340,7 +340,7 @@ Main reason why NLP tools do not work is the context: if a model was trained on 
 Just before we finish this notebook, let's use the person recognition tool on a text of a nover:
 
 
-```{r answer}
+```{r answerTwo}
 #  your code here
 pride_prejudice <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
 colnames(pride_prejudice)[1] ="text_line" 
