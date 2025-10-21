@@ -1,0 +1,17 @@
+```{r}
+# Tokenize and count term frequencies
+term_counts <- Corona_NLP_DF %>%
+  unnest_tokens(word, text) %>%
+  count(doc_id, word, sort = TRUE)
+
+print(term_counts)
+
+# Convert the tibble to a Document-Term Matrix
+dtm <- term_counts %>%
+  cast_dtm(document = doc_id, term = word, value = n)
+
+# View the DTM
+print(dtm)
+tm::inspect(dtm)
+```
+

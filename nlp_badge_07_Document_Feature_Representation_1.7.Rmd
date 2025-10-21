@@ -1,0 +1,527 @@
+---
+title: "Badge 7 Document Feature Representation"
+output: html_notebook
+---
+
+# Document Feature Representation
+
+In this badge we are going to explore different ways to create document vector representations with the *tm, quanteda* and *tidytext* package. We are going to create Bag of Word vectors (using frequency counts) and TF-IDF. We will put these vectors into document frequencies tables (we talked about these in week2).
+
+These packages have differing functionalities for doing things like lower case, punctuation removal, stemming etc. You may find you want to mix and match the functionalities so it is useful to be able to move data between these packages.
+
+Let's make sure we have the packages we need installed.
+
+
+```{r load_library}
+# WHEN YOU RUN THIS CODE, YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
+# for all packages we need:
+install.packages("pacman")
+pacman::p_load(tm, quanteda, tidytext, dplyr, tidyverse, pryr, chunked)
+
+```
+As we install more and more packages, sometimes you start thinking `Which package does this specific function come from?`. Code R has a wonderful function for you called `find( FUNCTION_NAME )`. You can pass any FUNCTION_NAME into it, and you'll find out which package it comes from!
+
+```{r}
+find("print")
+find("find")
+find("tm_map")
+find("data.frame")
+find("inspect")
+# notice that some functions like `inspect` are defined in many libraries. 
+# to be sure which one you're useing you'd call them as pryr::inspect or tm::inspect (you'll see this later)
+```
+Next let's create a sample dataframe with one column for document IDs and one column for text. It's easier to work with a small sample set of text first to see what is going on.
+
+```{r}
+# Sample dataframe
+df <- data.frame(
+  doc_id = 1:3,
+  text = c("John Smith went to Edinburgh", 
+           "Alice Swift lives in Paris", 
+           "Taylor Swift lives in USA"),
+  stringsAsFactors = FALSE
+)
+# let's see what's in it:
+df
+```
+
+## Method 1: We will use the `tm` package
+
+The `tm` package is a popular choice for text mining in R as it provides easy-to-use tools to create DTMs and apply term frequency (TF) and term frequency-inverse document frequency (TF-IDF) weightings. DTMs hold our nerical representations of the document - our document vectors.
+
+1.  Install and Load `tm`
+2.  Create a Document-Term Matrix with our sample data, here we are counting the frequencies of our terms so we are creating bag of words vectors
+
+```{r}
+# Create a Corpus from the text column
+corpus <- Corpus(VectorSource(df$text))
+
+# Create a DTM with term frequencies
+dtm <- DocumentTermMatrix(corpus)
+# View DTM (note inspect only looks and 10 columns)
+tm::inspect(dtm)
+```
+
+Next let's apply TF-IDF Weighting to our frequencies.
+
+To apply TF-IDF weighting to the DTM we use `weightTfIdf`
+
+```{r}
+# Apply TF-IDF weighting
+dtm_tfidf <- weightTfIdf(dtm)
+
+# View TF-IDF weighted DTM
+tm::inspect(dtm_tfidf)
+
+```
+
+## ACTIVITY: Reading documentation of a function
+
+Have a look at the `tm` package vignette to see some of the other functions. Try applying stopword removal or punctuation stripping to your corpus before creating the document term frequencies.
+
+[Link to Vignette](https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf)
+
+Wait WHAT IS A VIGNETTE? It is an online fine with the official documentation of a given function.
+
+```{r}
+# your code here
+```
+
+If you've been trying for a few minutes, but cannot find above options in the documentation, just a look at the answer:
+[Hint: Answer](./hints/hint_7_1.Rmd)
+
+
+OK, let's use this method on some real data: We have used a sample data frame but you might be wondering, how would I get my Corona tweet text data into tm as a corpus.
+
+```{r}
+#Load the corona csv to a datframe
+file_path='./data/CORONA_TWEETS.csv'
+Corona_NLP_DF <- read.csv(file_path, stringsAsFactors =FALSE, header=TRUE)
+
+#Call the Corona text column using the $ operator
+myCorpus <- Corpus(VectorSource(Corona_NLP_DF$text))
+Corona_dtm <- DocumentTermMatrix(myCorpus)
+
+```
+
+You can have a look in your RStudio's `Environment` section on the right, to see what's in those variables.
+
+## Method 2: Using *quanteda*
+
+The package `quanteda` is a highly flexible package for text analysis, offering easy conversion of text dataframes to document-feature matrices (DFMs) with various weighting schemes, including TF and TF-IDF.
+
+First let's
+
+1.  Install and load quanteda (ok... we already did that at the top of the notebook with `pacman`, but in your own work you might choose to pacman it down here)
+2.  Create a Document-Feature Matrix (DFM) and Apply TF-IDF Weighting
+
+```{r}
+# Create a corpus and DFM from the dataframe
+corpus <- corpus(df, text_field = "text")
+dfm <- dfm(tokens(corpus))
+
+# View the DFM with term frequencies
+print(dfm)
+
+# Apply TF-IDF weighting
+dfm_tfidf <- dfm_tfidf(dfm)
+
+# View the TF-IDF weighted DFM
+print(dfm_tfidf)
+
+
+```
+
+
+**If you see warnings at this point...** When woring on our own computers (not Noteable) We have found sometimes there are depreciation warnings when using this packages and incompatibilities so recently I tend to use the tidytext and tm more. That said there are some excellent blogs where people have used quanteda particularly around politics to analyse textdata.
+
+[Here is the quanteda vignette](https://cran.r-project.org/web/packages/quanteda/vignettes/quickstart.html)
+Feel free to look at some of the options when using the quanteda package.
+
+## Method 3: Using tidytext and dplyr Packages
+
+The tidytext package enables the creation of DTMs in a tidy data format. This is particularly useful if you prefer dplyr workflows and want to manage term weighting manually.
+
+In this next code block we will:
+
+1.  Install and load tidytext and dplyr
+2.  Unnest Tokens and Calculate Term Frequency (TF)
+3.  Calculate Inverse Document Frequency (IDF) and TF-IDF
+4.  Calculate IDF and TF-IDF values for each term
+
+You saw these steps last week in Week 2 Badges.
+
+```{r}
+pacman::p_load(tidytext,dplyr)
+
+# Tokenize and calculate term frequency
+df_tf <- df %>%
+  unnest_tokens(word, text) %>%
+  count(doc_id, word, sort = TRUE) %>%
+  group_by(doc_id) %>%
+  mutate(tf = n / sum(n)) %>%
+  ungroup()
+
+print(df_tf)
+
+```
+
+and then
+
+```{r}
+# Calculate document frequency
+df_idf <- df_tf %>%
+  count(word) %>%
+  rename(df = n)
+
+# Join with TF table and calculate TF-IDF
+df_tfidf <- df_tf %>%
+  inner_join(df_idf, by = "word") %>%
+  mutate(idf = log(n_distinct(doc_id) / df),
+         tf_idf = tf * idf) %>%
+  select(doc_id, word, tf_idf)
+
+print(df_tfidf)
+
+```
+
+We would like a document term matrix in tidytext format. 
+
+To do this we will:
+
+1.  Create a tibble with term frequencies
+
+2.  Convert our tibble with term frequncies it to a Document-Term Matrix (DTM) using cast_dtm().
+
+The `cast_dtm()` function takes three arguments:
+
+-   `document`: the column representing document IDs
+-   `term`: the column representing terms (words)
+-   `value`: the column representing term frequencies or counts
+
+    cast_dtm(doc_id, word, n): We are creating a DTM with doc_id as the rows (documents), word as the columns (terms), and n as the term frequency values.
+
+```{r}
+# Tokenize and count term frequencies
+term_counts <- df %>%
+  unnest_tokens(word, text) %>%
+  count(doc_id, word, sort = TRUE)
+
+print(term_counts)
+
+# Convert the tibble to a Document-Term Matrix
+dtm <- term_counts %>%
+  cast_dtm(document = doc_id, term = word, value = n)
+
+# View the DTM
+print(dtm)
+```
+
+## Viewing the DTM
+
+You can inspect the DTM by using inspect(dtm) if you want to see its structure:
+
+```{r}
+# Inspect the DTM#
+#(from the tm package)
+tm::inspect(dtm)
+```
+
+```{r}
+# Calculate TF-IDF
+term_tfidf <- term_counts %>%
+  bind_tf_idf(word, doc_id, n)
+
+# Convert the tibble with TF-IDF weights into a DTM
+dtm_tfidf <- term_tfidf %>%
+  cast_dtm(document = doc_id, term = word, value = tf_idf)
+
+# View the TF-IDF weighted DTM
+tm::inspect(dtm_tfidf)
+
+```
+
+## ACTIVITY: Read your corona data into a tidytext document term matrix
+
+If you're feeling brave, try to write this code yourself. But if you are struggling after a few minutes, just look at the hint
+
+```{r}
+# below is some pseudo-code to get you started:
+
+# Tokenize and count term frequencies
+
+# Convert the tibble to a Document-Term Matrix
+
+# View the DTM
+
+```
+
+[Hint: Answer](./hints/hint_7_2.Rmd)
+
+
+## Word Embeddings - GloVE 🧤
+
+We will load GloVE embeddings and have a look at the embedding document vector for the words. GloVE is a Standford project which generates and shares with the world word similarity matrix. It is really amazing, and explains quite well how it works [on their website](https://nlp.stanford.edu/projects/glove/) 
+
+This is a large download (a few minutes) so get the downloading started by running below code block, and meanwhile continue with notebook
+
+```{r}
+# first let's download the glove file, it is quite large
+# this will take a few minutes, but meanwhile you can continue following the lesson 
+# (but you won't be able to run code until the download is finished)
+options(timeout = 1200)
+filename_url <- "https://nlp.stanford.edu/data/wordvecs/glove.2024.wikigiga.50d.zip"
+filename_local <- "./data/glove.2024.wikigiga.50d.zip"
+if (!file.exists(filename_local)){
+	download.file(filename, filename_local) 
+  unzip(filename_local, exdir="./data/") 
+}
+```
+
+
+Note that below operations will take a lot of memory, for people using environment with limited memory (like posit cloud) try to load just the first 100000 lines. (full file has almost 2 million lines).
+
+
+```{r}
+# rm(list = setdiff(ls(), "")) # another way to have more memory os to clean your environment, like this
+
+library(data.table)
+# Specify the path to the GloVe file
+glove_file_name <- "./data/wiki_giga_2024_50_MFT20_vectors_seed_123_alpha_0.75_eta_0.075_combined.txt"
+
+# Load GloVe embeddings (I find sometimes trying to read as a csv can cause memory issues depending on your set-up)
+IF_MEMORY_IS_SPARESE_LOAD_JUST_THIS_MANY_WORDS <- 100000 # to load everything, change this value to -1
+# if you limit the word cooccurances here, keep in mind that some words will be missing (e.g. 'itemising')
+
+glove_embeddings <- fread(glove_file_name, header = FALSE, quote = " ", nrows = IF_MEMORY_IS_SPARESE_LOAD_JUST_THIS_MANY_WORDS)
+
+# Setting the column names based on 100-dimensional embeddings
+setnames(glove_embeddings, c("word", paste0("V", 1:50)))  
+
+# Convert the embeddings to a matrix and assign the words as teh row names
+glove_matrix <- as.matrix(glove_embeddings[, -1, with = FALSE])
+rownames(glove_matrix) <- glove_embeddings$word
+```
+
+In the `Environment` tab in RStudio click on `glove_matrix` to view the document vector for the embedding
+
+We will now:
+
+- calculate the similarity between two words based on their document vectors
+
+- find words similar to our input word
+
+Note this last one can take some time to compute.
+
+```{r}
+# Compute cosine similarity, i.e. take two numbers and do the math:
+# notice we are creating our own function here, and call it cosine_similarity
+cosine_similarity <- function(a, b) {
+  sum(a * b) / (sqrt(sum(a^2)) * sqrt(sum(b^2)))
+}
+```
+
+Now we have all the necessary ingredients, let's use them:
+
+```{r}
+# Example: Similarity between two words
+word1 <- "king"
+word2 <- "queen"
+similarity <- cosine_similarity(glove_matrix[word1, ], glove_matrix[word2, ])
+print(similarity)
+```
+```{r}
+# Example: Similarity between two words
+word1 <- "banana"
+word2 <- "queen"
+similarity <- cosine_similarity(glove_matrix[word1, ], glove_matrix[word2, ])
+print(similarity)
+```
+```{r}
+# Example: Similarity between two words
+word1 <- "banana"
+word2 <- "fruit"
+similarity <- cosine_similarity(glove_matrix[word1, ], glove_matrix[word2, ])
+similarity
+```
+
+```{r}
+# Example: Similarity between two words
+# but this time let's measure how long it takes:
+print(paste("start: ",Sys.time()))
+
+word1 <- "banana"
+word2 <- "yellow"
+
+similarity <- cosine_similarity(glove_matrix[word1, ], glove_matrix[word2, ])
+print(similarity)
+print(paste("end on:",Sys.time()))
+```
+
+Here's a more clearly written function which will calculate simmilarity of two words for us. Math is the same, but the 'interface' is better - we just give it two words and glove matrix, and the function does the magic for us, like this: `get_word_similarity("hospital", "clinic", glove_matrix)`
+
+```{r}
+
+get_word_similarity <- function(word1, word2, glove_words_matrix) {
+  # Extract word vectors (inside of the function, yay!)
+  vec1 <- glove_words_matrix[word1, ]
+  vec2 <- glove_words_matrix[word2, ]
+  
+  # Compute norms
+  norm1 <- sqrt(sum(vec1 * vec1))
+  norm2 <- sqrt(sum(vec2 * vec2))
+  
+  # Compute cosine similarity (same as before)
+  similarity <-   sum(vec1 * vec2) / (norm1 * norm2)
+  
+  return(similarity)
+}
+
+# Example use (with timings, this time with more 'human' units: seconds ):
+time_start <- Sys.time()
+get_word_similarity("hospital", "clinic", glove_matrix)
+print(Sys.time() - time_start) # this is how long it took
+
+```
+
+And how would we get the list of e.g. 10 words most co-occurring with the word we care about?
+
+```{r}
+
+get_connected_words <- function(target_word, glove_words_matrix, how_many = 10){
+	target_vec <- glove_words_matrix[target_word, ]
+  # here, there is no second word! instead we care for similarities of every word. 
+	
+	glove_norms <- sqrt(rowSums(glove_words_matrix * glove_words_matrix))
+	target_norm <- sqrt(sum(target_vec * target_vec))
+	
+	similarities <- (glove_words_matrix %*% target_vec) / (glove_norms * target_norm)
+	
+	# and here we will order those simmilarities and just grab thetop few.
+	similar_words_indexes <- order(similarities, decreasing = TRUE)[1:how_many]  # Indexes of Top X similar words
+	similar_words <- rownames(glove_words_matrix)[similar_words_indexes] # actual Top X similar words
+	similar_words
+}
+
+# let's use it a few times. If you're keen, you can add our code from above which measured how long things take.
+get_connected_words("hospital",glove_matrix)
+get_connected_words("patient",glove_matrix, 20)
+get_connected_words("sick",glove_matrix)
+```
+
+# and now let's use our function many many times, ooooh! this might come handy:
+
+You could even batch apply this function:
+```{r}
+some_words <- data.frame(word = c("hospital", "clinic", "practice"))
+some_words_connectios <- apply(some_words, 1, get_connected_words, glove_matrix) 
+some_words_connectios
+```
+Ok... this code is difficult. Especially the line starting with `apply...`. We will now take a few minutes to REALLY understand it. But of you are already very confident in your use of functions and apply, feel free to just down to the activity.
+
+
+## A word from our sponsor: FUNCTIONS and APPLY
+
+Let's recap a bit about **FUNCTIONS**. You build your own functions to EXTEND the R language, and add more functionality to it. For example R might not have a function `is_positive( some_number )` that will tell you if number is positive... so you can buuld it
+
+```{r}
+is_positive <- function( some_number ){
+  some_number > 0
+}
+# now you defined a function, you can call it as many times as you want:
+is_positive(5)
+is_positive(-3)
+is_positive(83)
+```
+Functions can take many arguments
+
+```{r}
+nth_character <- function( word, which_character ){
+  substr(word, which_character, which_character)
+}
+# now you defined a function, you can call it as many times as you want:
+nth_character("banana", 3)
+nth_character("banana", 4)
+nth_character("kiwi", 1)
+```
+But what if you wanted to apply a function many times, eg to each item in a collection?
+
+Let's dissect the onion-like code above, bit by bit. First:
+
+- `apply( collection, 1, function_name)` 
+
+It will apply will use/apply a function to each item in a collection of items. Number `1` means go row by row. `2` would mean go column by column.
+
+```{r}
+fruits = data.frame(name=c("banana","kiwi","plum"), 
+                    color=c("yellow","green","purple"))
+
+apply( fruits, 1, nchar)  # this will apply nchar (number of characters) to each item
+```
+
+but the really cool thing is that you do not have to limit yourself to just functions given to you by R like `nchar`. You could create your own. For example
+
+```{r}
+# let's first create our own function: 
+describe_fruit <- function(fruit){
+  paste(fruit['name'],"is",fruit['color'])
+}
+
+# you would not apply a function like that to a whole dataframe, because this would happen:
+descriptions <- describe_fruit(fruits)
+descriptions
+
+# instead you'd apply it to individual items:
+descriptions <- describe_fruit(fruits[1,]) # just first row
+descriptions
+
+# or (the fun part) you can apply it to all rows at once:
+descriptions <- apply(fruits, 1, describe_fruit) 
+descriptions
+```
+
+This bit is not always a good idea, but you will see it: you might even (fr very short functions, usually a one-liners) not define the function ahead of time, but put it right inside your apply, as an `unnamed function`. (btw. in python they are called `lambda`)
+
+```{r}
+# notice the function is defined right there where function name was.
+# do you see that this gets messy for bigger functions?
+descriptions <- apply(fruits, 1, function(fruit) paste(fruit['name'],"is",fruit['color']) ) 
+descriptions
+```
+
+And finally, if you function takes multiple arguments, you can just pass them on, inside your apply, like this:
+```{r}
+say_color_n_times <- function(fruit, times){
+	strrep(fruit['color'],times)
+}
+# descriptions <- apply(fruits, 1, say_color_n_times ) # this would freak out, since  say_color_n_times takes more than one argument
+descriptions <- apply(fruits, 1, say_color_n_times, 3 ) # this will repeat each fruit colour 3 times
+descriptions
+```
+So, to bring it back where we started:
+
+```{r}
+some_words <- data.frame(word = c("hospital", "clinic", "practice"))
+some_words_connections <- apply(some_words, 1, get_connected_words, glove_matrix, 10) 
+some_words_connections
+```
+## ACTIVITY: Your own funcitons similarity( word1, word2) and words_similar_to(word)
+
+What could you do with the newly acquired ability to identify co-appearing words? Think of a simple scenario and write code which makes it happen. Try to write it as a function.
+
+Some ideas: 
+- given list of words (e.g. sick, ill) get a list of co-appearing words which they have in common e.g. all 2 words share co-occurrence with "treated"
+
+```{r}
+
+
+```
+
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.
+
+# Conclusion:
+
+You hopefully see how we are slowly building towards our code being able to understand the 'meaning' behind the words. But also you see that because of the COMPLEXITY of the mathematical calculations involved, even the simplest operation can take very long time.

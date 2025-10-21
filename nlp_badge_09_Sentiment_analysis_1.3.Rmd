@@ -1,0 +1,435 @@
+---
+title: "Badge 9 Sentiment Analysis & Topic Modelling"
+output: html_notebook
+---
+
+# Sentiment Analysis & Topic Modelling
+
+In this badge we will look at sentiment in text.
+
+Lets load up some packages we need.
+
+```{r, include=FALSE}
+# WHEN YOU RUN THIS CODE, YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
+# for all packages we need:
+install.packages("pacman")
+pacman::p_load(tidytext, textdata, tokenizers, stringr, dplyr, tm)
+```
+
+Next we are going to load up our Corona tweets. We will load these to a data frame and also flatten our text into a string (you saw this in the previous badge). We will convert our data frame into a tibble.
+
+```{r}
+file_path='./data/CORONA_TWEETS.csv'
+Corona_NLP_DF <- read.csv(file_path, stringsAsFactors =FALSE, header=TRUE)
+#Creating a str from our Corona data text column
+corona_text <- Corona_NLP_DF$text |>
+  str_flatten()
+
+corona_tibble<-as_tibble(Corona_NLP_DF)
+```
+
+## Sentiment Analysis - Methods and Dictionaries:
+
+This text is taken from ['Text Mining with R'](https://www.tidytextmining.com/sentiment) by Jilie Silge and David Robertson
+
+------------------------------------------------------------------------
+
+There are a variety of methods and dictionaries that exist for evaluating the opinion or emotion in text. The tidytext package provides access to several sentiment lexicons. Three general-purpose lexicons are
+
+AFINN from Finn Årup Nielsen, bing from Bing Liu and collaborators, and nrc from Saif Mohammad and Peter Turney. All three of these lexicons are based on unigrams, i.e., single words. These lexicons contain many English words and the words are assigned scores for positive/negative sentiment, and also possibly emotions like joy, anger, sadness, and so forth.
+
+-   The nrc lexicon categorizes words in a binary fashion (“yes”/“no”) into categories of positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, and trust.
+
+-   The bing lexicon categorizes words in a binary fashion into positive and negative categories.
+
+-   The AFINN lexicon assigns words with a score that runs between -5 and 5, with negative scores indicating negative sentiment and positive scores indicating positive sentiment.
+
+------------------------------------------------------------------------
+
+Let's first use the sentiment data set `nrc` and we will filter this for joy sentiment.
+
+We will create a tibble of words from our Corona data set to work with.
+
+We then join the sentiment words for joy with our data set.
+
+```{r}
+# NOTE: you might be asked for something in the "Console" area of RStudio. Just say Yes.
+
+#You can change the sentiment lexicon by swapping nrc for bing. We'll do it in a minute, so wait till first activity
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+nrc_joy
+```
+
+OK now let's look for joy. First we tokenise the dataset
+
+```{r}
+#Create our tibble of words
+corona_words<-corona_tibble %>%
+   unnest_tokens(word, text)
+```
+
+And then we apply count joy words:
+
+```{r}
+#Filter and count the words expressing joy in our Corona tweets  
+corona_joy_sentiment<-corona_words %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+
+corona_joy_sentiment
+```
+
+## ACTIVITY: Feel more than joy! And then tune in to other emotions!
+
+Change the sentiment from joy to anger. Then also change the lexicon to have a look at the output of other lexicons. (keep in mind that, as mentioned above, different lexicons work differently).
+
+```{r}
+# your code here
+```
+
+[HINT: Answer](./hints/hint_9_1.Rmd)
+
+## Plotting Emotions
+
+Now we are going to look at positive and negative sentiment and plot the top 10 occurring words. first the libraries:
+
+```{r, include=FALSE}
+# WHEN YOU RUN THIS CODE, YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
+pacman::p_load(ggplot2, tidyr)
+```
+
+```{r}
+#Create our corona sentiment tibble
+corona_sentiment <- corona_words %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(Location,index=row_number(), sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+#Get our word counts
+bing_word_counts <- corona_words %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+#Plot our sentiments
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10) %>% 
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
+
+bing_word_counts_loc <- corona_words %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(Location, sentiment, sort = TRUE) %>%
+  ungroup()
+
+bing_word_counts_loc %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10) %>% 
+  ungroup() %>%
+  mutate(word = reorder(Location,n))%>%
+  ggplot(aes(n, Location, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
+
+```
+
+In previous badges we used Word Clouds to visualise common words in our data. We will use them here to visualise the most common positive and negative words.
+
+first the libraries:
+
+```{r, include=FALSE}
+# WHEN YOU RUN THIS CODE, YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
+pacman::p_load(wordcloud, reshape, reshape2)
+```
+
+and now let's look at things:
+
+```{r}
+corona_words %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("gray20", "gray80"),
+                   max.words = 100)
+```
+
+Next we will use the *afinn* sentiment lexicon. We will input specific countries to look at and view the sentiment of the sentences with those countries in them.
+
+```{r}
+#get the afinn sentiment lexicon
+sentiment_dict <- get_sentiments("afinn")
+
+#tokenize to sentences - you could use the original tweets
+corona_sent <-
+  corona_text |>
+  tokenize_sentences(simplify = TRUE) |>
+  as_tibble() |>
+  dplyr::rename(sentence = value) # this is because there were many `value` functions
+
+corona_sent
+```
+
+```{r}
+#Tests the country/word was found and gives a mean sentiment value or returns not found
+sentiment_for_country_word <- function(country_name){
+  #find the sentences with that country/word in them
+  sents_with_country <-
+    corona_sent |>
+    filter(str_detect(sentence, country_name)) |>
+    str_flatten(collapse = " ")
+  
+  print(sents_with_country)
+  if(sents_with_country == "character(0)"){
+    return("Not Found") # in R you do not need to explicitly RETURN a value from a function, but you can suround it with return() if it helps readability 
+  }else{  
+    sents_with_country <- sents_with_country |> str_to_lower()
+    avg_sentiment <- sentiment_dict |>
+      filter(str_detect(sents_with_country, fixed(word))) # sentiment_dict has keys: word, value. fixed() is a stringr's function relating to regex 
+  
+    avg_sentiment <- avg_sentiment |>
+      summarise(sentiment = mean(value))
+    
+    return(avg_sentiment)
+  }
+}
+
+#Pick a country (or even more broadly a word) to look at
+sentiment_for_country_word("Germany")
+sentiment_for_country_word("USA")
+sentiment_for_country_word("Government")
+sentiment_for_country_word("covid")
+sentiment_for_country_word("hopes")
+```
+
+## Topic Modelling
+
+We are going to use LDA topic modelling
+
+-   `topicmodels`: Contains functions to fit topic models like LDA.
+
+-   `tidytext`: Helps with text manipulation and converting data into a "tidy" format
+
+We fit the LDA model using the LDA() function from `topicmodels` package
+
+-   `K number` specifies the number of topics to extract from the document
+
+-   setting a seed makes the results reproducible
+
+```{r, include=FALSE}
+# WHEN YOU RUN THIS CODE, YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
+# for all packages we need:
+pacman::p_load(topicmodels, tidytext, ggplot2, dplyr, tm)
+```
+
+A dataset we will use is a collection of 2246 news articles from [Associated Press data, gathered for a conference in 1992](https://search.r-project.org/CRAN/refmans/topicmodels/html/associatedpress.html)
+
+```{r}
+# once you download the dataset with this line, you will have access to the variable AssociatedPress
+data("AssociatedPress")
+
+# try it, get a few terms
+Terms(AssociatedPress) %>% head(10)
+
+# To inspect it a bit (get the terms ordered from most popular), we could turn it into a dataframe, the arrange
+ap_topics <- tidy(AssociatedPress)
+
+# let's sort it by most popular
+ap_topics %>% 
+  arrange(desc(count))
+```
+
+```{r}
+# let's create Linear Discriminant Analysis for a small number of topics:
+# NOTICE: we set a seed so that the output of the model is predictable
+# This will take a few minutes. Hopefully your RStudio can handle it!
+ap_lda <- LDA(AssociatedPress, k = 8, control = list(seed = 1234))
+ap_lda
+```
+
+Let's explore the topics
+
+-   `terms` function will show the top terms for each topic - here we look at the top 5 terms
+
+```{r}
+terms(ap_lda,10)
+```
+
+## Which document is abotu which topic?
+
+To see how much a topic contributes to a document we can examine the document-topic matrix
+
+-   `posterior(lda_model)$topics`: Extracts the topic proportions for each document, showing the likelihood of each document belonging to each topic. Each row represents a document, and each column represents a topic.
+
+```{r}
+# Document-topic distribution
+topic_dist <- posterior(ap_lda)$topics
+print(head(topic_dist))
+```
+
+Do you see how second document clearly belongs to two topics? The one about president of USA and the one about federal course cases. It would be nice to confirm it by reading the document, but this dataset does not include the original text of the documents. Later in this notebook we will look at a simmilar exercise on a different dataset (which does provide us with the souce documents!).
+
+Meanwhile, ere we graph the top terms for each topic
+
+```{r}
+ap_topics <- tidy(ap_lda)
+
+ap_top_terms <- ap_topics %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+ap_top_terms %>%
+    mutate(term = reorder_within(term, beta, topic)) %>%
+    ggplot(aes(beta, term, fill = factor(topic))) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~ topic, scales = "free") +
+    scale_y_reordered()
+```
+
+## ANOTHER DATASET and the same journey!
+
+In this next activity we will repeat the same journey we did over last 5 minutes, but on a different dataset. Since each dataset has many of its own pecularities, there will be some extra steps, so stay sharp!
+
+Let's have a look at a dataset that we can both eyeball, and analyse. To achieve that we will
+
+-   load a set of lots of news articles from (Harvard Dataverse\>News Articles)[<https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GMFCTR>]
+-   turn them into a corpus and clean it up
+-   create our own DocumentTermMatrix based on that corpus
+-   create our own LDA and inspect topics that are there.
+-   to VALIDATE IT we will identify a few articles which were flagged as belonging to clear topics, and read them to see if it is true
+
+Let's first have a look at the data, and then have a look at the code where we create LDA and find some topics in this dataset. What do you think will be common topics in above news articles?
+
+```{r}
+news_articles <- read.csv("./data/NewsArticles.csv", stringsAsFactors = FALSE)
+# for simplicity we will combine article title, subtitle and text into one column full_text
+news_articles <- news_articles %>% mutate(full_text = paste(title, subtitle, text))
+news_articles
+```
+
+Now let's create a corpus 
+
+```{r}
+news_articles_corpus <- VCorpus(VectorSource(news_articles$full_text))
+news_articles_corpus
+```
+
+then we'll clean it up.
+
+```{r}
+# Cleanup the text, this is using tm_map from the tm package. It has mapping functions for many of the common tasks we have to perform first:
+news_articles_corpus <- news_articles_corpus %>%
+  tm_map( content_transformer(tolower)) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(removeNumbers)%>%
+  tm_map(removeWords, stopwords("en"))%>%
+  tm_map(stripWhitespace)
+```
+
+then we'll create DocumentTermMatrix. Hopefully your computer can handle it. 
+
+```{r}
+# then we need to create DocumentTermMatrix object- it will extract terms from individual rows
+# in the above example of associated press, we downloaded one which was already pre-prepared for us
+# but now we'll make our own. This can take some time
+news_articles_dtm <- DocumentTermMatrix(news_articles_corpus)
+```
+
+then there's an extra cleanup step, which gave us a lot of headache to figure out and is specific to this dataset, since it includes letters in number of languages.
+
+
+```{r}
+pacman::p_load(slam) ## this one is for the matrix operations (eg. hunting down our empty term)
+
+# this bit is a bit complex to explain, but it can happen that some terms do not appear in documents. 
+# It's often a fault of encoding, or unrecognised symbols from non-latin alphabets. To avoid drama, we will clean them up here:
+
+# empty_terms <- rowSums(as.matrix(news_articles_dtm)) == 0  # which terms have no values (sum is 0)
+# news_articles_dtm <- news_articles_dtm[!empty_terms, ] # keep all rows, apart of those empty ones
+# 
+dtm_matrix <- as.simple_triplet_matrix(news_articles_dtm)
+non_empty_docs <- row_sums(news_articles_dtm) > 0
+news_articles_dtm <- news_articles_dtm[non_empty_docs, ]
+print(any(row_sums(news_articles_dtm) == 0))  # Should return FALSE
+
+head(Terms(news_articles_dtm), 200)
+```
+
+Now that we have the DTM we can repeat exactly analysis we did with the associated press dataset:
+
+Which terms are popular?
+
+```{r}
+news_articles_terms <- tidy(news_articles_dtm)
+
+# let's sort it by most popular
+news_articles_terms %>% 
+  arrange(desc(count))
+```
+
+OK, let's create an LDA, and see what topics we can find in the data. Let's start with 6 topics:
+
+```{r}
+# this next operation is really memory-intensive and will take a while. Your rstudio might crash. To give you a better chance, let's clean up our data environment and remove all variables apart of the ones we actually need right now. (it does mean that you will have to re-run some of your notebook if you want to scrolll back and repeat some acticities)
+
+# remove all variables apart of 
+rm(list = setdiff(ls(), c("news_articles_dtm", "df2", "news_articles")))
+```
+
+With some more space (you see how the Environment seciton of Rstudio is empty?) let's give it a try!
+
+```{r}
+# creating a new LDA might take a few minutes
+news_articles_lda <- LDA(news_articles_dtm, k = 6, control = list(seed = 1234))
+```
+
+now let's print the common words in topics, and the numbers which describe 'belonging' of each article to each topic
+
+```{r}
+news_articles_lda
+terms(news_articles_lda, 10)
+
+topic_dist <- posterior(news_articles_lda)$topics
+print(head(topic_dist))
+```
+
+## Activity: Did it work?!
+
+Look at the top 5 articles. Identify 2 or 3 which strongly belong to some topic or topics. Then print given rows from the original dataset, read the article and decide if it indeed belongs to a topic described with above words.
+
+Below we started you with some code and an example picked article and topic. Identify a few more topic-article pairs which are meaningful/
+
+```{r}
+# change which article and which topic could match? change values in top two variables and rerun this code chunk
+which_article <- 2
+which_topic <- 1
+
+print("Do those words describe below article?")
+
+
+print(paste("Text of article", which_article))
+print(news_articles[which_article,]$full_text)
+# 
+print(paste("Words within topic",which_topic))
+terms(news_articles_lda, 10)[, which_topic]
+```
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.
+
+# Conclusion:
+
+This badge was a handful and required a lot of waiting for the code to run. That's because topic modelling is a fascinating are mathematically, and the things that happen behind the scene are (luckily!) not part of this course. In above examples we spend a lot of time cleaning up the data. Why? Partially to simplify computer's job, but also because these tools and models were trained on clean data.

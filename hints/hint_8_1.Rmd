@@ -1,0 +1,3 @@
+Yes, some everyday words sneaked in, and got interpreted as surnames (e.g. Germany, Money) because is is possible to be calld Jim Germany (a Canadian footballer).
+
+But it is rather unlikely that a word Germany refers to a surname, rather it's a country. How could we tell that they occur as a surname - regex to look around and see if there is a name before or a title?

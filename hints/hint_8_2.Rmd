@@ -1,0 +1,41 @@
+The documentation (here)[https://cran.r-project.org/web/packages/nametagger/nametagger.pdf] is here.
+
+some hypothesis about the modified sentence `"Hello I am Marianna and this is Mary Jane who lives in Scotland. We work as teachers. We have a cat George and she is a tabby. Scotland is cold and rainy in the winter like the rest of United Kingdom, but I like Scotland."`
+
+First let's see this new sentence, with the old code (slightly improved)
+
+```{r}
+#we create a function to run the entity tagger
+extract_entities <- function(text) {
+  result <- predict(nametagger_model, text, split = '\\s+')  
+  result
+}
+
+# for my own use, here I create a better data format so the changes are easier to see:
+show_only_recognised <- function(text){
+  extract_entities(text) %>% # notice we are using one of our functions inside of another of our functions! that's common in programming.
+    filter(entity != 'O') %>%
+    mutate(full_name = paste(term, entity, sep = "/")) %>%
+    summarize(all_names = paste(full_name, collapse = ", "))  # Combine into a single string
+}
+
+text ="Hello I am Marianna and this is Mary Jane who lives in Scotland. We work as teachers. We have a cat George and she is a tabby. Scotland is cold and rainy in the winter like the rest of United Kingdom, but I like Scotland."
+show_only_recognised(text)
+```
+Hypothesis (some of which we can fix or test, some we can't without re-training the model):
+- 'Scotland.' (with a full stop) is not recognised a s acountry. We could remove pubcluation.
+- 'Mary' is not recognised as a name, maybe because tokens are lower-cased, and 'mary' means 'happy'? To fix that we might need to re-train the model to not ignore capitalisation?
+- 'Meilo' is an uncommon name
+- 'United Kingdom' because it has two words?
+- 'Mary Jane' - not su sure? all of the above?
+
+Since code is not a part of this activity, we won't be fixing those. but have a look at this: if all we change is how we separate tokens, using `\\W` (non-word characters) rather than `\\s+` (spaces)... we already fix the problem with the dot in `Scotland.` (last item).
+
+
+```{r}
+
+text ="Hello I am Mary and this is Paul who lives in Scotland. We work as teachers.  We have a cat Meilo and she is a tabby. Scotland is cold and rainy in the winter but I like Scotland."
+predict(nametagger_model, text, split = '\\W')  
+```
+
+
