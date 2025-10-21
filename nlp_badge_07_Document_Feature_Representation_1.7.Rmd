@@ -16,7 +16,7 @@ Let's make sure we have the packages we need installed.
 # WHEN YOU RUN THIS CODE, YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
 # for all packages we need:
 install.packages("pacman")
-pacman::p_load(tm, quanteda, tidytext, dplyr, tidyverse, pryr, chunked)
+pacman::p_load(tm, quanteda, tidytext, dplyr, tidyverse, pryr, chunked, data.table)
 
 ```
 As we install more and more packages, sometimes you start thinking `Which package does this specific function come from?`. Code R has a wonderful function for you called `find( FUNCTION_NAME )`. You can pass any FUNCTION_NAME into it, and you'll find out which package it comes from!
@@ -85,6 +85,38 @@ Wait WHAT IS A VIGNETTE? It is an online fine with the official documentation of
 
 ```{r}
 # your code here
+setDT(df)
+
+# stop word removal
+df_stop <- df[# unnest
+  , unnest_tokens(.SD, word, text)
+  ][ # remove stop wordsdf
+    !word %in% stop_words$word
+  ][ # merge back into string
+    , .(text = paste(word, collapse = " ")), by = doc_id
+  ]
+df_stop
+
+# Create a Corpus from the text column
+corpus_stop <- Corpus(VectorSource(df_stop$text))
+# Create a DTM with term frequencies
+dtm_stop <- DocumentTermMatrix(corpus_stop)
+# View DTM (note inspect only looks and 10 columns)
+tm::inspect(dtm_stop)
+# Apply TF-IDF weighting
+dtm_stop_tfidf <- weightTfIdf(dtm_stop)
+# View TF-IDF weighted DTM
+tm::inspect(dtm_stop_tfidf)
+
+# OR, using corpus... this seems to use a different stop_words list
+# use tm_map with some transformation...
+getTransformations()
+
+# Remove stop words
+corpus <- tm_map(corpus, removeWords, stopwords("en"))
+corpus
+dtm_stop2 <- DocumentTermMatrix(corpus)
+tm::inspect(dtm_stop2)
 ```
 
 If you've been trying for a few minutes, but cannot find above options in the documentation, just a look at the answer:
@@ -97,6 +129,7 @@ OK, let's use this method on some real data: We have used a sample data frame bu
 #Load the corona csv to a datframe
 file_path='./data/CORONA_TWEETS.csv'
 Corona_NLP_DF <- read.csv(file_path, stringsAsFactors =FALSE, header=TRUE)
+setDT(Corona_NLP_DF)
 
 #Call the Corona text column using the $ operator
 myCorpus <- Corpus(VectorSource(Corona_NLP_DF$text))
