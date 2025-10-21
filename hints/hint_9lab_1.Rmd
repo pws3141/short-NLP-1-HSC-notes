@@ -1,0 +1,9 @@
+```{r}
+common_word_counts <-  pride_prejudice %>% 
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words) %>% 
+  count(word, sort = TRUE) %>%
+  top_n(50)
+
+common_word_counts 
+```
