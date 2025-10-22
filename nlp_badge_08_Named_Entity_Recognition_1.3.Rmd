@@ -17,7 +17,7 @@ Additionally you can import a number of other special pipes. Further down in thi
 
 ```{r, include=FALSE}
 install.packages("pacman")
-pacman::p_load(magrittr)
+pacman::p_load(magrittr, data.table)
 ```
 
 now we have this new pipe, so `people <- people %>%  transform(...` can become `people %<>% transform(... ` because `%<>%` pipe means, **apply this pipe to yourself**
@@ -55,6 +55,7 @@ pacman::p_load(tidyverse, rvest, glue, stringr, gapminder)
 
 ```{r}
 #Gapminder package will give us a lexicon of countries
+country_codes_dt <- as.data.table(country_codes)
 country_codes |> head(10)
 ```
 
@@ -86,6 +87,16 @@ country_counts_just_words_ordered <- country_counts_just_words |>
 country_counts_just_words_ordered
 ```
 
+```{r}
+# using data.table
+country_counts_just_words2 <- country_codes_dt[
+                               , times_mentioned := str_count(corona_text, country)
+                       ][
+                               times_mentioned > 0
+                       ]
+country_counts_just_words2_ordered <- country_counts_just_words2[order(-times_mentioned)]
+```
+
 This time we are going to use the `lexicon` package to get a list of `names` to look for in our data.
 
 Activity: Google the `R lexicon package` to see other lexicon options this package has to offer. 
@@ -111,16 +122,16 @@ The first thing we are doing is creating a data frame of common names. We are ta
 # Load frequent first names dataset
 data("freq_first_names", package = "lexicon")
 # Convert common_names to a dataframe if it is a list
-if (is.list(freq_first_names)) {
-  freq_first_names <- as.data.frame(freq_first_names)
-}
+#if (is.list(freq_first_names)) {
+  #freq_first_names <- as.data.frame(freq_first_names)
+#}
 
 # Load last names dataset
 data("freq_last_names", package = "lexicon")
 # Convert common_names to a dataframe if it is a list
-if (is.list(freq_last_names)) {
-  freq_last_names <- as.data.frame(freq_last_names)
-}
+#if (is.list(freq_last_names)) {
+  #freq_last_names <- as.data.frame(freq_last_names)
+#}
 ```
 
 In this next codeblock we are reframing the first and last names and renaming the columns.\
@@ -131,22 +142,18 @@ We will use this `vector of names` when trying to find names in our text.
 ```{r}
 
 # Rename columns for consistency and add a column to specify name type
-first_names <- freq_first_names %>%
-  rename(name = Name) %>%
-  select(name) %>%
-  mutate(type = "first_name")
 
-last_names <- freq_last_names %>%
-  rename(name = Surname) %>%
-  select(name) %>%
-  mutate(type = "last_name")
+first_names <- freq_first_names[, .(name = Name, type = "first_name")]
+
+last_names <- freq_last_names[, .(name = Surname, type = "last_name")]
 
 # Combine first and last names and remove duplicates
-all_names <- bind_rows(first_names, last_names) %>%
-  distinct(name, .keep_all = TRUE)
+#all_names <- bind_rows(first_names, last_names) %>%
+  #distinct(name, .keep_all = TRUE)
+all_names <- unique(rbindlist(list(first_names, last_names)), by = "name")
 
 #Creating a vector of unique names to compare against
-names <- unique(c(all_names$name))
+names <- unique(all_names[, name])
 ```
 
 Now we are ready to compare our Names list to our text column in the Corona tweets dataframe. to do this we will:
@@ -179,7 +186,30 @@ find_names <- function(text) {
 Corona_NLP_DF<- Corona_NLP_DF %>%
   rowwise() %>%
   mutate(matched_names = find_names(text))
+
+                                        
 ```
+
+> data.table version
+
+```{r}
+Corona_NLP_DF2 <- read.csv(file_path, stringsAsFactors =FALSE, header=TRUE)
+corona_nlp_dt <- as.data.table(Corona_NLP_DF2)
+names_vec <- names
+# using the find_names function
+corona_nlp_dt[, matched_names := sapply(text, find_names)]
+
+# or, without the function
+corona_nlp_dt[,
+              matched_names := sapply(text, \(t) {
+                        words <- unlist(strsplit(t, "\\s+"))
+                        matches <- intersect(words, names_vec)
+                        if (length(matches) == 0) NA_character_
+                        else paste(matches, collapse = ", ")})
+                ]
+corona_nlp_dt[, .(doc_id, matched_names)]
+```
+
 
 ## ACTIVITY: Review the matched_names column in  Corona_NLP_DF 
 
@@ -233,6 +263,21 @@ entities_in_word
 show_only_recognised(entities_in_word)
 ```
 
+> data.table version
+
+```{r}
+text ="Hello I am Mary and this is Paul who lives in Scotland. We work as teachers.  We have a cat Meilo and she is a tabby. Scotland is cold and rainy in the winter but I like Scotland"
+entities_in_word <- as.data.table(predict(nametagger_model, newdata = text))
+entities_in_word[entity != "O", # an O (oh) not a zero
+                 .(all_names = paste(term, entity, sep = "/", collapse = ", "))
+                ]
+text ="Hello I am Paul and this is Fred we live in Scotland. We work as school teachers.  We have a cat called Bob and he is a tabby. Scotland is cold and rainy in the winter but I like Scotland."
+entities_in_word <- as.data.table(predict(nametagger_model, newdata = text))
+entities_in_word[entity != "O", # an O (oh) not a zero
+                 .(all_names = paste(term, entity, sep = "/", collapse = ", "))
+                ]
+```
+
 ## ACTIVITY: What do you notice about the outputs of above two sentences?
 
 Look carefully at the outpits of above code. Two sentences provide slightly different outputs of the named entity recognition. Why do you think it finds some names and locations and not others?
@@ -269,6 +314,8 @@ pacman::p_load_gh("trinker/entity")
 pacman::p_load(entity, magrittr, tidytext, dplyr, tidyr)
 # also we need to download some data:
 ```
+
+
 
 We will first look at the inbuilt `wiki` data to see person entities. If it asks you to install packages select yes. This may take a few moments to run if it needs to download.
 
@@ -329,7 +376,29 @@ Repeat the steps above for the names. Hint use person_entity()
 
 ```{r answer}
 #  your code here
+
+# new Person column
+Corona_NLP_DF$per<-person_entity(Corona_NLP_DF$text)
+
+# get counts of people
+cor_dt <- as.data.table(Corona_NLP_DF)
+cor_dt[, .(per)]
+
+cor_dt[!sapply(per, is.null)
+       ][, .(per = unlist(per))
+       ][, .(n = .N), by = per
+       ][order(-n, per)]
+
+#Corona_NLP_DF %>%
+  #filter(!is.null(per)) %>%
+  #unnest(per) %>%
+  #select(c(per, row))
 ```
+
+```{r}
+plot(Corona_NLP_DF$per, min = 2)
+```
+
 
 [Hint: Answer](./hints/hint_8_4.Rmd)
 
@@ -389,3 +458,4 @@ Now is a good moment to write down your self reflection: think of 3 STARS (thing
 # Conclusion:
 
 Now we have looked at identifying Named Entities in the data. You've seen packages that can be used for it, and some of their limitations and power. One thing that is very clear is: THESE ARE NOT VERY SUITABLE. Or at least not for this data.  
+
