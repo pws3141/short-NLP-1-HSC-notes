@@ -1,0 +1,129 @@
+# Week 3 Tutorial
+
+For the last time we will look at the Pride and Prejudice (We promise a new dataset from next week 🌟 )
+
+Below tasks will challenge you to apply (not just repeat) the techniques from badges 7,8 and 9.
+
+## Task: "They talk more about love than family!" with Common Word Embeddings - GloVE 🧤
+
+
+You goal: Verify the thesis: More common words in Pride and Prejudice have meaning similar to "Love" than to "Family"?
+
+1. Find some (100? 500? 1000?) most common words in the book (eg. using badge 5 activity "Terms frequency". You might also want to `anti_join(stop_words)`)
+2. Create two new columns in which you will store the given words similarity to word `love` and another one for similarity with word `family` (eg. by Using answers answers to badge 7 activity with Glove files)
+3. Look at the top values for each term, and decide on a a cut-off point (what similarity value should already not count as similar). Then add occurrences of all good words and all bad words.
+4. Validate or deny the thesis.
+
+
+```{r, include=FALSE}
+# IF ASKED ABOTU RESTARTING R SAY: NO
+install.packages("pacman")
+# pacman::p_load(ggplot2,dplyr, stringr, udpipe, lattice, tidytext, readr, SnowballC, textstem, syuzhet, igraph, tidyr,RColorBrewer,wordcloud)
+pacman::p_load(tibble, stringr)
+```
+and now the data:
+```{r}
+pride_prejudice_raw_text <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
+colnames(pride_prejudice_raw_text)[1] ="text" 
+pride_prejudice <- as_tibble(pride_prejudice_raw_text) 
+rm(pride_prejudice_raw_text)
+```
+
+```{r}
+## Term Frequency
+ #  your code here
+```
+[hint: answer to Term Frequency](./hints/hint_9lab_1.Rmd)
+
+
+Download glove file if you do not have it yetm tgen look at similarity (badge 7)
+
+```{r}
+# this is from badge 7:
+
+library(data.table)
+options(timeout = 1200)
+filename_url <- "https://nlp.stanford.edu/data/wordvecs/glove.2024.wikigiga.50d.zip"
+filename_local_zip <- "./data/glove.2024.wikigiga.50d.zip"
+filename_local_glove <- "./data/wiki_giga_2024_50_MFT20_vectors_seed_123_alpha_0.75_eta_0.075_combined.txt"
+
+# only get files if we do not have them yet
+if (!file.exists(filename_local_glove)){
+	if (!file.exists(filename_local_zip)){
+		download.file(filename_url, filename_local_zip) 
+	}
+	unzip(filename_local_zip, exdir="./data/") 
+	file.remove(filename_local_zip)
+}
+
+IF_LOW_MEMORY_LOAD_JUST_THIS_MANY_WORDS <- 100000 
+glove_embeddings <- fread(filename_local_glove, header = FALSE, quote = " ", nrows = IF_LOW_MEMORY_LOAD_JUST_THIS_MANY_WORDS)
+
+setnames(glove_embeddings, c("word", paste0("V", 1:50)))  
+glove_matrix <- as.matrix(glove_embeddings[, -1, with = FALSE])
+rownames(glove_matrix) <- glove_embeddings$word
+```
+
+Note that below operations will take a lot of memory, for people using environment with limited memory (like posit cloud) try to load just the first 100000 lines. (full file has almost 2 million lines).
+
+now do the thing:
+
+```{r}
+#  your code here...
+
+```
+
+[hint: answer to counting simmilar words](./hints/hint_9lab_2.Rmd)
+
+
+## TASK 2: Prouder and More Prejudiced! Improve the entity recognition by cleaning up the dataset better!
+
+In the badge 8 we had a good simple test if the entity recognition recognises every sentence of Elisabeth as a person. We have out 'point of truth'/'perfect answer' by just counting the occurrences of a word `Elizabeth` (634 times). Then we use Entity recognition, and check how many times there a word Elizabeth was recognised as a person (eg. 420 times). If Entity recognition gets very close to simple word count (to 634) then we can be more confident that it works well. In the simple example in badge 8 we saw that without data cleaning, 'person Elisabeth' is recognised 435 times. Add extra cleanup steps below to improve that number, even if you just improve it a little bit.
+
+Here are some ideas: is punctuation removed? what is Elizabeth appears twice in one sentence? (which might be totally legitimate to not put it in twice as an entity). Try to be creative. You are given some starting code below.
+
+```{r, include=FALSE}
+pacman::p_load_gh("trinker/entity")
+# pacman::p_load(entity, magrittr, tidytext, dplyr, tidyr)
+pacman::p_load(dplyr,tidytext)
+data(wiki)
+person_entity(wiki)
+# NOTE! at this point RStudio might ask you a question in 'Console' area at the bottom of your screen.
+# Go there and type 'Yes' and click Enter. It will start installing a large-ish file (74.2 MB), which will take 2-3 minutes
+```
+
+In the interest of time and memory, if we just look at the top lines, how many uses of Elisabeth we find if counting strings and how many if counting recognised entities.
+
+This is a large piece of data to investigate... and we just don't have time to read the book (just now, I mean. Do read it later, if it's yoru cup of Earl Grey tea!).
+
+Before you start attacking the problem, first write something close to tests. Read starting code below - it creates a column with number of strings "Elizabeth" and another one with count of entitles "Elisabeth". Get crafty, e.g. start by writing some code which will identify (and show) just the lines where those two counts do not match. Then try to identify what could be the reasons, and maybe fix it (if it's easy). 
+
+Treat this exercise as an excuse to get to know the tools and building up some reproducible/trustworthy coding habbits (like testing). Good luck.
+
+```{r}
+pride_prejudice_raw_text <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
+colnames(pride_prejudice_raw_text)[1] ="text" 
+pride_prejudice <- as_tibble(pride_prejudice_raw_text) %>% head(n=500)  
+# here we're grabbing just the first x lines, grab less if your memory is sparse
+
+# your code here (warning, it might not be simple)
+# 
+
+
+
+
+
+pride_prejudice$Name <- person_entity(pride_prejudice$text)
+
+some_person = "Elizabeth"
+
+pride_prejudice <- pride_prejudice %>%
+  mutate(names_flat = sapply(Name, function(x) paste(x, collapse = " "))) %>%
+	mutate(count_strings = str_count(text, fixed(some_person))) %>%
+	mutate(count_entitles = str_count(names_flat, fixed(some_person)))
+
+print("counting strings")
+pride_prejudice$count_strings %>% sum()
+print("counting entities")
+pride_prejudice$count_entitles %>% sum()
+```

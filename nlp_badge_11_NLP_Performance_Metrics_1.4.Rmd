@@ -1,0 +1,307 @@
+---
+title: "Badge 11 NLP Performance Metrics"
+output: html_notebook
+---
+
+# NLP Performance Metrics
+
+**Note before we start abotu Rstudio setup**: your R studio might be setup to replace Tabs with double spaces. If that starts happening in yoru text files (especially .ann files where there is a bit difference between meaning of tabs and spaces)... you might see some weird behaviours. This setting can be disabled in RStudio > Project Options > Code Editing > disable it there.
+
+## What are True/False Positives/Negatives?
+
+Explanation of the Code
+
+In this notebook we look at two ways to calculate Precision, Recall and F1 Scores.
+
+First we define the counts for True Positive(TP), False Positive(FP), and False Negative(FN) with the respective counts.
+
+As a recap, when we need to guess if something is True of False, we can either:
+
+- We guessed `True`  and it was indeed   `True`  - True Positives (TP) - CORRECT GUESS!
+- We guessed `True`  and it was actually `False` - False Positives (FP)
+- We guessed `False` and it was actually `True`  - False Negatives (FN)
+- We guessed `False` and it was indeed   `False` - True Negatives (TN) - CORRECT GUESS!
+
+Let's take the example from the slides:
+
+We evaluate 200 items. Out of those: 80 we thought are TRUE, and 120 we thought are FALSE.
+But when we compared our results with the golden/correct answers:
+
+- from our 80 guessess of TRUE, 70 were correctly guessed (were indeed TRUE) and 10 were not correctly guessed (they were actually meant to be FALSE).
+- from our 120 guessess of FALSE, 100 were correctly guessed (were indeed FALSE) and 20 were not correctly guessed (they were actually meant to be TRUE).
+
+## ACTIVITY: What are the TP,FP,FN, TN values for the above scenario?
+
+In above case you'd say
+True Positives (TP): 70 (correctly predicted positive examples)
+False Positives (FP): 10 (incorrectly predicted positive examples)
+False Negatives (FN): 20 (actual positive examples that were missed)
+True Negatives (TN): 100 (correctly predicted negative examples)
+
+```{r}
+# complete the code below with your values
+
+TP <- 123
+FP <- 234
+FN <- 345
+TN <- 456
+```
+
+[Hint: Answer](./hints/hint_11_1.Rmd)
+
+## ACTIVITY: Calculate precision, recall and F1
+
+Then let's use code to calculate precision and recall using the formulas we described in the video. The F1 score is computed using the harmonic mean formula we also described in the video.
+
+Finally, we print the results, rounding to 3 decimal places. You'd use `round(your_variable_here, 3)`
+
+```{r}
+# first a simple example what you are meant to do. In a format like this, continue your work from above and calculate values of variables, using other variables (not by just typing in numbers like 10,20 etc.)
+
+# example
+a <- 2
+b <- 5
+c <- 9
+something <- (a + b) / c
+cat("Some answer:", round(something, 7), "\n") # eg. round to 7 decimals
+``` 
+OK now it's your turn:
+```{r}
+# Calculate Precision
+precision <- #your code, use variables you defined in your code previously: TP, FP, ... 
+
+# Calculate Recall
+recall <- #your code
+
+# Calculate F1 Score
+f1_score <- #your code
+
+cat("something?", "\n") # what does cat and \n do? If you're not sure there's an example below in "Fun stuff" section
+cat("something else?", "\n")
+cat("something else else?", "\n")
+```
+
+
+[Hint: Answer](./hints/hint_11_2.Rmd)
+
+
+## Fun R stuff: difference between print() and cat()
+
+In R there is a useful 'interpreted print' called `cat()` - it stands for Concatenate and Print. Concatenate is a fancy word for glueing many strings together.
+
+```{r}
+# cat() is like print() but it will INTERPRET special characters like \n (Enter) or \t (Tab)
+# you already encountered those notations when working on RegEx
+
+word <- "banana\norange\tkiwi\tplum\n\npear"
+print(word)
+cat(word)
+```
+## MLmetrics and a real example of evaluation
+
+Now we will use the package `MLmetrics` to call functions precision,recall and F1 score to calculate the respective metrics for binary classification.
+
+- `actual` represents the actual class labels
+- `predicted` represents the labels predicted ones (the outcome from a model).
+
+- `1` specifies the positive class (1 for positives).
+
+```{r, include=FALSE}
+# WHEN YOU RUN THIS CODE, YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
+# for all packages we need:
+install.packages("pacman")
+pacman::p_load(MLmetrics, dplyr)
+```
+
+Notice that We will not do the math ourselves this time, instead we will lean on the MLmetrics and use that library's functions instead!
+
+
+```{r}
+# Define the actual and predicted labels
+actual <-    c(1, 0, 1, 1, 0, 1, 0, 0, 1, 1) # the actual correct (6 positives, 4 negatives)
+predicted <- c(0, 0, 1, 0, 0, 1, 1, 0, 1, 1) # your predictions   (positives: 4 true, 2 false; negatives: 3 true, 1 false)
+
+# Calculate Precision, Recall, and F1 Score (with functions from MLmetrics)
+precision <- Precision(actual,predicted, positive = "1")
+recall <- Recall(actual, predicted, positive = "1")
+f1_score <- F1_Score( actual, predicted, positive = "1")
+
+# Print results
+cat("Precision:", round(precision, 3), "\n")
+cat("Recall:", round(recall, 3), "\n")
+cat("F1 Score:", round(f1_score, 3), "\n")
+```
+
+
+
+## Evaluating BRAT files, to check PERFORMANCE of the annotation (accuracy, etc).
+
+Lets compare two BRAT annotation files and calculate Precision, Recall and F1
+
+What we'll do:
+
+- We'll create and use function thatturns an .ann file into a dataframe. 
+- Then we will use that function to turn two files `gold` is the golden standard (the truth), and `pred` is our model's prediction.
+- Then we will compare how accurate etc is the `prediction`, when compared to `golden value`.
+ 
+This function is brought over from the previous badge. If any part of it does not make sense to you, refer to the previous badge for the explanation:
+
+Let's see this in code:
+
+```{r}
+# First: the function to read a BRAT annotation file into a data frame
+# it's very similar to what we created in the previous badge.
+
+read_brat_file <- function(file_path) {
+  ann_data <- readLines(file_path)
+  
+   # Initialize empty data frames for storing entities and relations
+  entities <- data.frame(ID = character(), 
+  											 Type = character(), 
+  											 Start = integer(), 
+  											 End = integer(), 
+  											 Text = character())
+  relations <- data.frame(ID = character(), 
+  												Relation = character(), 
+  												Arg1 = character(), 
+  												Arg2 = character())
+  
+  for (line in ann_data) {
+    parts <- unlist(strsplit(line, "\t")) # first split by TAB
+    # Extract entity type and positions (see above examle about tabs and spaces)
+    entity_id <- parts[1]
+    entity_info <- unlist(strsplit(parts[2], "\\s")) # then detailed info by SPACE
+    entity_text <- parts[3]
+
+    
+    if (startsWith(line, "T")) {
+      # Parse entity line (e.g., T1 PERSON 0 4 John)
+      parts <- str_split(line, "\\s+")[[1]]
+      entities <- entities %>% add_row(
+				ID = entity_id,
+	      Type = entity_info[1],
+	      Start = as.numeric(entity_info[2]),
+	      End = as.numeric(entity_info[3]),
+	      Text = entity_text
+      )
+    } else if (startsWith(line, "R")) {
+      # Parse relation line (e.g., R1 Lives_In Arg1:T1 Arg2:T2)
+      parts <- str_split(line, "\\s+")[[1]]
+      relations <- relations %>% add_row(
+        ID = entity_id,
+        Relation = entity_info[1],
+        Arg1 = str_replace(entity_info[2], "Arg1:", ""),
+        Arg2 = str_replace(entity_info[3], "Arg2:", "")
+      )
+    }
+  }
+  list(entities = entities, relations = relations)
+}
+```
+
+And now let's use that function twice. After running it, check ou the values in both dataframes `gold_annotations` and `pred_annotations` in the Environment section of your RStudio.
+
+```{r}
+# Load the gold and predicted annotations
+gold_annotations <- read_brat_file("./data/gold_FIXED.ann")
+pred_annotations <- read_brat_file("./data/pred_FIXED.ann")
+
+# let's look at just the entities:
+
+gold_entities <- gold_annotations$entities
+pred_entities <- pred_annotations$entities
+gold_entities
+pred_entities
+```
+
+## ACTIVITY: Manual evaluation
+
+Inspect those two variables `gold_entities` and `pred_entities` in Environment. How many differences can you find? What types of differences are they?
+
+Label each inconsistency as False/True positive/negative. Calculate by hand precision, recall and f1_score. It is usually a great idea to do things by hand before you start coding, at least to the level where you understand them well enough that you could do them by hand. 
+
+Do this on a piece of paper! Or write it down in this code cell, but do the calculation yourself.
+
+```{r}
+# you could doodle your work here
+
+```
+
+[Hint: Only once you did it by yourself first](./hints/hint_11_3.Rmd)
+
+## Using R to compare and evaluate two BART files:
+
+To achieve this we will use `merge` function. In your R console type `?merge` to find out what it does. 
+
+
+```{r}
+fruits_ripe <-data.frame(name = c("banana","kiwi","plum", "apple"), 
+                         colour = c("yellow", "green", "purple","green"),
+                         amount=c(2,4,5,6))
+fruits_raw <-data.frame(name = c( "apple", "banana","kiwi","plum"), 
+                        colour = c("green", "green", "green", "green"),
+                        amount=c(2,1,3,9))
+merge(fruits_ripe, fruits_raw, by=c("name", "colour"))
+
+# look at the result below - what does merge return? why those fruits were kept, and what are those new columns?
+# how can you answer a simple question: "how many identical fruits are in both sets?" in a simple numeric way?
+```
+
+Now let's apply the same method to our data. Below function we will:
+
+- take two dataframes
+- merge them to only keep identical rows (identical in rows "Type", "Start", "End")
+- count number of rows in the 'identicals' set. That's the `True Positives` as in "we thought this will be a tag, and it was a tag". YAY!
+- count tags in pred that are not in identicals, that's `False Positives`
+- count tags in gold that are not in identicals, that's `False Negatives`
+- Then do the math yourself to evaluate precision, recall and F1
+- return the result as a named list
+
+Let's do it:
+
+```{r}
+# Function to calculate precision, recall, and F1
+calculate_metrics <- function(gold, pred) {
+  # Check if predicted annotations match gold annotations by Type and span
+  matches <- merge(gold, pred, by = c("Type", "Start", "End"))
+  
+  true_positives <- nrow(matches)
+  false_positives <- nrow(pred) - true_positives
+  false_negatives <- nrow(gold) - true_positives
+  
+  print("true_positives")
+  print(true_positives)
+  print("false_positives")
+  print(false_positives)
+  print("false_negatives")
+  print(false_negatives)
+  
+  # Calculate precision, recall, and F1
+  precision <- true_positives / (true_positives + false_positives)
+  recall <- true_positives / (true_positives + false_negatives)
+  f1_score <- 2 * (precision * recall) / (precision + recall)
+  
+  return(list(precision = precision, recall = recall, f1_score = f1_score))
+}
+```
+
+Now we can use our function to compare our gold and prod.
+
+```{r}
+# Calculate metrics
+metrics <- calculate_metrics( gold_entities, pred_entities )
+
+# Print results
+cat("Precision:", metrics$precision, "\n")
+cat("Recall:", metrics$recall, "\n")
+cat("F1 Score:", metrics$f1_score, "\n")
+```
+How would you interpret those results? Are they the same as the ones you calculated by hand? (see hint in Manual evaluation activity above).
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.
+
+# Conclusion:
+
+Out job as data scientists is to use tools and build tools. Which means that in our daily practice we need to DECIDE what tool to use (or if we need to build one); OPTIMISE existing ones for the given scenario; and FINE-TUNE tools that already exists (our own or someone else's). **None of those activities can succeed without good Measurement and Testing strategy!** - and that's why knowing how to test our tools and predictions as at the core of the Data Science practice. And once you have measures, you can know if next code iteration (file, library, line of code)... makes your solution better, or the same, or actually worse.

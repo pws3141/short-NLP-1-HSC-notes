@@ -1,0 +1,17 @@
+You'd say that for this scenario
+
+True Positives (TP): 70 (correctly predicted positive examples)
+False Positives (FP): 10 (incorrectly predicted positive examples)
+False Negatives (FN): 20 (actual positive examples that were missed)
+True Negatives (TN): 100 (correctly predicted negative examples)
+
+```{r}
+TP <- 70
+FP <- 10
+FN <- 20
+TN <- 100
+
+# and if you wondered how many guesses there were in total you could add all options
+ALL <- TP + TN + FP + FN
+ALL
+```
