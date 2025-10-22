@@ -1,0 +1,4 @@
+```{r}
+pride_prejudice_demo <- pride_prejudice_demo %>%
+  mutate(text_line = str_replace_all(text, fixed("."), ""))
+```
