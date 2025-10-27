@@ -1,0 +1,16 @@
+---
+title: "Badge 12 Ethics and Bias"
+output: html_notebook
+---
+
+# Ethics and Bias
+
+There aren't really any programming exercises for this badge. So just jusp straight to your 3 Stars and 1 Wish.
+
+# Reflection:
+
+Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.
+
+# Conclusion:
+
+Wherever you look in history, new tools and technologies have always brought dangers with them. Sailing, stock exchanges, industrial revolution, science, internet or machine learning, all multiplied our capabilities as humanity, but enabled all sorts of evil, harmful activities. Our responsibility at the forefront of Data Science is to shape it in a way that will make the world a better place, not just for some of us, but for all of us.

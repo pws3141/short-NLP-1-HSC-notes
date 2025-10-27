@@ -1,0 +1,42 @@
+```{r}
+# Load GloVe embeddings (I find sometimes trying to read as a csv can cause memory issues depending on your set-up)
+glove_embeddings <- fread(filename_local_glove, header = FALSE, quote = "")
+# Setting the column names based on 100-dimensional embeddings
+setnames(glove_embeddings, c("word", paste0("V", 1:50)))  
+
+# Convert the embeddings to a matrix and assign the words as teh row names
+glove_matrix <- as.matrix(glove_embeddings[, -1, with = FALSE])
+rownames(glove_matrix) <- glove_embeddings$word
+
+cosine_similarity <- function(a, b) {
+  sum(a * b) / (sqrt(sum(a^2)) * sqrt(sum(b^2)))
+}
+
+similarity <- function(word1, word2) {
+  cosine_similarity(glove_matrix[word1, ], glove_matrix[word2, ])
+}
+
+common_word_counts <- common_word_counts[(common_word_counts$word %in% rownames(glove_matrix)), ]
+
+
+common_word_counts$love_like <- sapply(common_word_counts$word, function(some_word) {
+    similarity(some_word, "love")
+})
+
+common_word_counts$family_like <- apply(common_word_counts["word"], 1, function(some_word) {
+    similarity(some_word, "family")
+})
+
+common_word_counts %>% arrange(desc(love_like) )
+common_word_counts %>% arrange(desc(family_like) )
+
+count_all_words_love <-  common_word_counts %>% filter(love_like > 0.5) %>%
+  select(n) %>%  
+  sum( na.rm = TRUE)
+
+count_all_words_family <-  common_word_counts %>% filter(family_like > 0.5) %>%
+  select(n) %>%  
+  sum( na.rm = TRUE)
+
+count_all_words_love > count_all_words_family
+```
