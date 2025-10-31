@@ -28,6 +28,14 @@ corona_text <- Corona_NLP_DF$text |>
 corona_tibble<-as_tibble(Corona_NLP_DF)
 ```
 
+> data.table
+
+```{r}
+library(data.table)
+corona_dt <- as.data.table(corona_tibble)
+```
+
+
 ## Sentiment Analysis - Methods and Dictionaries:
 
 This text is taken from ['Text Mining with R'](https://www.tidytextmining.com/sentiment) by Jilie Silge and David Robertson
@@ -70,6 +78,13 @@ corona_words<-corona_tibble %>%
    unnest_tokens(word, text)
 ```
 
+> data.table
+
+```{r}
+corona_dt <- corona_dt[, unnest_tokens(.SD, word, text)]
+```
+
+
 And then we apply count joy words:
 
 ```{r}
@@ -81,12 +96,31 @@ corona_joy_sentiment<-corona_words %>%
 corona_joy_sentiment
 ```
 
+> data.table
+
+```{r}
+nrc_joy_dt <- as.data.table(nrc_joy)
+cdt_joy_sentiment <- corona_dt[nrc_joy_dt, on = 'word', nomatch = 0
+                               ][, .(n = .N), by = word
+                               ][order(-n)]
+cdt_joy_sentiment 
+```
+
+
 ## ACTIVITY: Feel more than joy! And then tune in to other emotions!
 
 Change the sentiment from joy to anger. Then also change the lexicon to have a look at the output of other lexicons. (keep in mind that, as mentioned above, different lexicons work differently).
 
 ```{r}
 # your code here
+nrc <- get_sentiments("nrc")
+setDT(nrc)
+# angerrrrr
+cdt_anger_sentiment <- corona_dt[nrc[sentiment == 'anger'], on = 'word', nomatch = 0
+          ][, .(n = .N), by = word
+          ][order(-n)]
+
+cdt_anger_sentiment 
 ```
 
 [HINT: Answer](./hints/hint_9_1.Rmd)
@@ -316,7 +350,8 @@ Let's first have a look at the data, and then have a look at the code where we c
 news_articles <- read.csv("./data/NewsArticles.csv", stringsAsFactors = FALSE)
 # for simplicity we will combine article title, subtitle and text into one column full_text
 news_articles <- news_articles %>% mutate(full_text = paste(title, subtitle, text))
-news_articles
+dim(news_articles)
+news_articles[1]
 ```
 
 Now let's create a corpus 
