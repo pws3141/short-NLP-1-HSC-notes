@@ -18,21 +18,32 @@ You goal: Verify the thesis: More common words in Pride and Prejudice have meani
 ```{r, include=FALSE}
 # IF ASKED ABOTU RESTARTING R SAY: NO
 install.packages("pacman")
-# pacman::p_load(ggplot2,dplyr, stringr, udpipe, lattice, tidytext, readr, SnowballC, textstem, syuzhet, igraph, tidyr,RColorBrewer,wordcloud)
-pacman::p_load(tibble, stringr)
+pacman::p_load(data.table, ggplot2,dplyr, stringr, udpipe, lattice, tidytext, readr, SnowballC, textstem, syuzhet, igraph, tidyr,RColorBrewer,wordcloud)
 ```
 and now the data:
 ```{r}
 pride_prejudice_raw_text <- read.delim("./data/pride_prejudice.txt", stringsAsFactor = FALSE)
 colnames(pride_prejudice_raw_text)[1] ="text" 
-pride_prejudice <- as_tibble(pride_prejudice_raw_text) 
+pride_prejudice <- as.data.table(pride_prejudice_raw_text) 
 rm(pride_prejudice_raw_text)
+str(pride_prejudice)
 ```
 
 ```{r}
 ## Term Frequency
  #  your code here
+
+pp_tf <- pride_prejudice[, unnest_tokens(.SD, output = word, input = text)
+                         ][, .(n = .N), by = word
+                         ][order(-n)]
+pp_tf
 ```
+
+```{r}
+# 200 most common words
+pp_tf_top <- pp_tf[1:200]
+```
+
 [hint: answer to Term Frequency](./hints/hint_9lab_1.Rmd)
 
 

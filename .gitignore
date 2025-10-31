@@ -61,3 +61,5 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+data/glove.2024.wikigiga.50d.zip
+data/wiki_giga_2024_50_MFT20_vectors_seed_123_alpha_0.75_eta_0.075_combined.txt

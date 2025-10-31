@@ -306,7 +306,7 @@ options(timeout = 1200)
 filename_url <- "https://nlp.stanford.edu/data/wordvecs/glove.2024.wikigiga.50d.zip"
 filename_local <- "./data/glove.2024.wikigiga.50d.zip"
 if (!file.exists(filename_local)){
-	download.file(filename, filename_local) 
+	download.file(filename_url, filename_local) 
   unzip(filename_local, exdir="./data/") 
 }
 ```

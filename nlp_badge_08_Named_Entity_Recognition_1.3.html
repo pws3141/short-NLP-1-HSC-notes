@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.30">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Badge 8 Named Entity Recognition</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/clipboard/clipboard.min.js"></script>
+<script src="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/quarto-html/quarto.js"></script>
+<script src="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/quarto-html/popper.min.js"></script>
+<script src="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/quarto-html/anchor.min.js"></script>
+<link href="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="nlp_badge_08_Named_Entity_Recognition_1.3_files/libs/bootstrap/bootstrap-34745567add538a638dde46bc8a747e1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Badge 8 Named Entity Recognition</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="named-entity-recognition" class="level1">
+<h1>Named Entity Recognition</h1>
+<p>In this notebook we will try a few tools for recognising entities (places, people, etc). You will notice that sometimes the tools work really well, and sometimes they do not. We will look at ways to cleanup data, but also we might later look at ways to pick the most appropriate model for the task at hand.</p>
+<section id="pipes-all-the-pipes" class="level2">
+<h2 class="anchored" data-anchor-id="pipes-all-the-pipes">Pipes! All the Pipes!</h2>
+<p>You already noticed that while we learn about NLP we also experience some new advanced elements of R language. You already know <code>%&gt;%</code> pipe, but recently R community is using more and more a simpler (ubt just as powerful) syntax for a pipe <code>|&gt;</code>. It is made of two symbols: a vertical line <code>|</code> (which depending on your keyboard could be on the very right-hand-side, or very left-hand-side) and the larger-than symbol <code>&gt;</code>.</p>
+<p>You can use <code>|&gt;</code> pipe in the same way as <code>%&gt;%</code>. But some very advanced uses are different.</p>
+<p>Additionally you can import a number of other special pipes. Further down in this notebook we will import from <code>magrittr</code> an ‘self-assignment’ pipe. So that instead of saying <code>students &lt;- students</code></p>
+<p>now we have this new pipe, so <code>people &lt;- people %&gt;%  transform(...</code> can become <code>people %&lt;&gt;% transform(...</code> because <code>%&lt;&gt;%</code> pipe means, <strong>apply this pipe to yourself</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>people <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">name =</span> <span class="fu">c</span>(<span class="st">"Alice"</span>, <span class="st">"Vikkie"</span>, <span class="st">"Pim"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>people <span class="ot">&lt;-</span> people <span class="sc">%&gt;%</span> <span class="fu">transform</span>( </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>   <span class="at">name_length=</span> <span class="fu">nchar</span>(name)) </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>people</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    name name_length
+1  Alice           5
+2 Vikkie           6
+3    Pim           3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>people <span class="sc">%&lt;&gt;%</span> <span class="fu">transform</span>( </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>   <span class="at">name_length=</span> <span class="fu">nchar</span>(name)) </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>people</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    name name_length
+1  Alice           5
+2 Vikkie           6
+3    Pim           3</code></pre>
+</div>
+</div>
+<p>You can read about it some other time, but for now, let’s get back to NLP:</p>
+</section>
+<section id="additional-data-imported-with-packages-eg.-gapminder-for-country-codes" class="level2">
+<h2 class="anchored" data-anchor-id="additional-data-imported-with-packages-eg.-gapminder-for-country-codes">Additional data imported with packages (eg. gapminder for country codes)</h2>
+<p>We are going to look at a couple different NER packages that we can use Out-Of-the-Box. The first two examples are using lexicons to find and match against tokens in our text.</p>
+<p>First we need to load a lexicon to use to find entities in our text. We are going to use a list of countries from the package <em>gapminder.</em> The is a data package with a subset from the Gapminder data. The provides gapminder data in a data frame or “tibble”. There are other aspects, such as pre-made color schemes for the countries and continents, and ISO 3166-1 country codes.</p>
+<p>Let’s load the libraries we need. and then take a look with <em>head</em> to see what is in the countries list.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Gapminder package will give us a lexicon of countries</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>country_codes_dt <span class="ot">&lt;-</span> <span class="fu">as.data.table</span>(country_codes)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>country_codes <span class="sc">|&gt;</span> <span class="fu">head</span>(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 3
+   country     iso_alpha iso_num
+   &lt;chr&gt;       &lt;chr&gt;       &lt;int&gt;
+ 1 Afghanistan AFG             4
+ 2 Albania     ALB             8
+ 3 Algeria     DZA            12
+ 4 Angola      AGO            24
+ 5 Argentina   ARG            32
+ 6 Armenia     ARM            51
+ 7 Aruba       ABW           533
+ 8 Australia   AUS            36
+ 9 Austria     AUT            40
+10 Azerbaijan  AZE            31</code></pre>
+</div>
+</div>
+<p>We will load our Corona data into a data frame and then create a string from our Corona dataframe <code>text</code> column and then look for any country mentions.</p>
+<p>We use <code>str_flatten</code> to create a string from our column text data. <code>str_flatten</code> reduces a character vector to a single string - it is concatenating all the strings in the text column to a single sting.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Load the corona csv to a datframe</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>file_path<span class="ot">=</span><span class="st">'./data/CORONA_TWEETS.csv'</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>Corona_NLP_DF <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(file_path, <span class="at">stringsAsFactors =</span><span class="cn">FALSE</span>, <span class="at">header=</span><span class="cn">TRUE</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating a str from our Corona data text column</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>corona_text <span class="ot">&lt;-</span> Corona_NLP_DF<span class="sc">$</span>text <span class="sc">|&gt;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_flatten</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Below <code>country_codes</code> comes from loading the gapminder package. We use mutate to create an extra column called <code>times_mentioned</code> and use the <code>str_count</code> function to look for the country. Then with filter if a country is not mentioned we filter it out.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>country_counts_just_words <span class="ot">&lt;-</span> country_codes <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">times_mentioned =</span> <span class="fu">str_count</span>(corona_text, country)) <span class="sc">|&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(times_mentioned <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">#here we are rearranging country_counts_just_words by desc order of times mentioned</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>country_counts_just_words_ordered <span class="ot">&lt;-</span> country_counts_just_words <span class="sc">|&gt;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(times_mentioned))</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>country_counts_just_words_ordered</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 75 × 4
+   country   iso_alpha iso_num times_mentioned
+   &lt;chr&gt;     &lt;chr&gt;       &lt;int&gt;           &lt;int&gt;
+ 1 Canada    CAN           124              72
+ 2 China     CHN           156              50
+ 3 Italy     ITA           380              36
+ 4 India     IND           356              27
+ 5 Kenya     KEN           404              18
+ 6 Russia    RUS           643              17
+ 7 Belgium   BEL            56              14
+ 8 Spain     ESP           724              12
+ 9 Australia AUS            36              11
+10 Qatar     QAT           634               9
+# ℹ 65 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># using data.table</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>country_counts_just_words2 <span class="ot">&lt;-</span> country_codes_dt[</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                               , times_mentioned <span class="sc">:</span><span class="er">=</span> <span class="fu">str_count</span>(corona_text, country)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                       ][</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                               times_mentioned <span class="sc">&gt;</span> <span class="dv">0</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                       ]</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>country_counts_just_words2_ordered <span class="ot">&lt;-</span> country_counts_just_words2[<span class="fu">order</span>(<span class="sc">-</span>times_mentioned)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This time we are going to use the <code>lexicon</code> package to get a list of <code>names</code> to look for in our data.</p>
+<p>Activity: Google the <code>R lexicon package</code> to see other lexicon options this package has to offer.</p>
+<p><a href="https://github.com/trinker/lexicon">Also useful is the github page</a></p>
+<p>Let’s load the required package - you may need to install lexicon first.</p>
+<p>The first thing we are doing is creating a data frame of common names. We are taking these from the <code>freq_first name</code> and <em>freq_last_name</em> lexicons and converting them into data frames. Click on the dataframes in the environment to see their content.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load frequent first names dataset</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">"freq_first_names"</span>, <span class="at">package =</span> <span class="st">"lexicon"</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert common_names to a dataframe if it is a list</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">#if (is.list(freq_first_names)) {</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">#freq_first_names &lt;- as.data.frame(freq_first_names)</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co">#}</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Load last names dataset</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">"freq_last_names"</span>, <span class="at">package =</span> <span class="st">"lexicon"</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert common_names to a dataframe if it is a list</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="co">#if (is.list(freq_last_names)) {</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">#freq_last_names &lt;- as.data.frame(freq_last_names)</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co">#}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In this next codeblock we are reframing the first and last names and renaming the columns.<br>
+Then we combine them into one list of names and convert them into a vector.</p>
+<p>We will use this <code>vector of names</code> when trying to find names in our text.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename columns for consistency and add a column to specify name type</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>first_names <span class="ot">&lt;-</span> freq_first_names[, .(<span class="at">name =</span> Name, <span class="at">type =</span> <span class="st">"first_name"</span>)]</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>last_names <span class="ot">&lt;-</span> freq_last_names[, .(<span class="at">name =</span> Surname, <span class="at">type =</span> <span class="st">"last_name"</span>)]</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine first and last names and remove duplicates</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co">#all_names &lt;- bind_rows(first_names, last_names) %&gt;%</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">#distinct(name, .keep_all = TRUE)</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>all_names <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">rbindlist</span>(<span class="fu">list</span>(first_names, last_names)), <span class="at">by =</span> <span class="st">"name"</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating a vector of unique names to compare against</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>names <span class="ot">&lt;-</span> <span class="fu">unique</span>(all_names[, name])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we are ready to compare our Names list to our text column in the Corona tweets dataframe. to do this we will:</p>
+<ol type="1">
+<li><p>Tokenize the input - Corona text string - into words</p></li>
+<li><p>Check if any of the tokenized words match the list of names we have</p></li>
+<li><p>If there is a match this is set to the return value for the column and put in in our Corona tweets data frame</p></li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Function to find names in text</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>find_names <span class="ot">&lt;-</span> <span class="cf">function</span>(text) {</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Split the text into words</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a> <span class="co"># words &lt;- str_split(text, "\\s+")[[1]]</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  words <span class="ot">&lt;-</span><span class="fu">unlist</span>(<span class="fu">strsplit</span>(text, <span class="st">"</span><span class="sc">\\</span><span class="st">s+"</span>))</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  matched_names<span class="ot">=</span><span class="st">""</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Check if any words are in the names list</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  matched_names <span class="ot">&lt;-</span> words[words <span class="sc">%in%</span> names]</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Return matched names or NA if no match</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(matched_names) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">paste</span>(matched_names, <span class="at">collapse =</span> <span class="st">", "</span>))</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="cn">NA</span>)</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply the function to the text column in our dataframe</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>Corona_NLP_DF<span class="ot">&lt;-</span> Corona_NLP_DF <span class="sc">%&gt;%</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">matched_names =</span> <span class="fu">find_names</span>(text))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<blockquote class="blockquote">
+<p>data.table version</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>Corona_NLP_DF2 <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(file_path, <span class="at">stringsAsFactors =</span><span class="cn">FALSE</span>, <span class="at">header=</span><span class="cn">TRUE</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>corona_nlp_dt <span class="ot">&lt;-</span> <span class="fu">as.data.table</span>(Corona_NLP_DF2)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>names_vec <span class="ot">&lt;-</span> names</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># using the find_names function</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>corona_nlp_dt[, matched_names <span class="sc">:</span><span class="er">=</span> <span class="fu">sapply</span>(text, find_names)]</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># or, without the function</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>corona_nlp_dt[,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>              matched_names <span class="sc">:</span><span class="er">=</span> <span class="fu">sapply</span>(text, \(t) {</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>                        words <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">strsplit</span>(t, <span class="st">"</span><span class="sc">\\</span><span class="st">s+"</span>))</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>                        matches <span class="ot">&lt;-</span> <span class="fu">intersect</span>(words, names_vec)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">if</span> (<span class="fu">length</span>(matches) <span class="sc">==</span> <span class="dv">0</span>) <span class="cn">NA_character_</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">else</span> <span class="fu">paste</span>(matches, <span class="at">collapse =</span> <span class="st">", "</span>)})</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>                ]</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>corona_nlp_dt[, .(doc_id, matched_names)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      doc_id matched_names
+       &lt;int&gt;        &lt;char&gt;
+   1:      1           New
+   2:      2          Fred
+   3:      3          &lt;NA&gt;
+   4:      4          &lt;NA&gt;
+   5:      5          &lt;NA&gt;
+  ---                     
+3794:   3794    In, Israel
+3795:   3795          &lt;NA&gt;
+3796:   3796          &lt;NA&gt;
+3797:   3797          &lt;NA&gt;
+3798:   3798          &lt;NA&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="activity-review-the-matched_names-column-in-corona_nlp_df" class="level2">
+<h2 class="anchored" data-anchor-id="activity-review-the-matched_names-column-in-corona_nlp_df">ACTIVITY: Review the matched_names column in Corona_NLP_DF</h2>
+<p>What sort of problems can you see? Can you think of any ways to fix these? In this activity you;re not asked to actually fix it, just look at the data and write down what you can think of.</p>
+<p><em>You can write your findings here</em></p>
+<p>After you wrote down some thoughts, have a look at the <a href="./hints/hint_8_1.Rmd">HINT: Answer</a></p>
+</section>
+<section id="ner-with-pre-trained-models" class="level2">
+<h2 class="anchored" data-anchor-id="ner-with-pre-trained-models">NER with pre-trained models</h2>
+<p>Next we are going to use some available models that have been pre-trained. We will use <code>nametagger</code> and <code>entity</code> package</p>
+<p><code>nametagger</code> allows you to find and extract entities (names, persons, locations, addresses, …) in raw text. You can also train and build your own entity recognition models with this package. The model is based on a maximum entropy Markov model.</p>
+<p>You can google <code>R package nametagger</code> to read more about it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(nametagger) <span class="co"># then we can use pacman as usual</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">#we need to download the model - we create a directory to put the model in then download the english-conll model.</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"models"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in dir.create("models"): 'models' already exists</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>nametagger_model <span class="ot">&lt;-</span> <span class="fu">nametagger_download_model</span>(<span class="st">"english-conll-140408"</span>, <span class="at">model_dir =</span> <span class="st">"models"</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#we create a function to run the entity tagger</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>extract_entities <span class="ot">&lt;-</span> <span class="cf">function</span>(text) {</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">predict</span>(nametagger_model, text, <span class="at">split =</span> <span class="st">'</span><span class="sc">\\</span><span class="st">s+'</span>)  </span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Use mutate to create the merged column and select to keep only that column</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  result</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>show_only_recognised <span class="ot">&lt;-</span> <span class="cf">function</span>(entities){</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  entities <span class="sc">%&gt;%</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(entity <span class="sc">!=</span> <span class="st">'O'</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">full_name =</span> <span class="fu">paste</span>(term, entity, <span class="at">sep =</span> <span class="st">"/"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="at">all_names =</span> <span class="fu">paste</span>(full_name, <span class="at">collapse =</span> <span class="st">", "</span>))  <span class="co"># Combine into a single string</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="co">#Create a text string and run it through the nametagger function</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>text <span class="ot">=</span><span class="st">"Hello I am Mary and this is Paul who lives in Scotland. We work as teachers.  We have a cat Meilo and she is a tabby. Scotland is cold and rainy in the winter but I like Scotland"</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>entities_in_word <span class="ot">&lt;-</span> <span class="fu">extract_entities</span>(text)</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>entities_in_word</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   doc_id sentence_id term_id      term entity
+1       1           1       1     Hello  B-ORG
+2       1           1       1         I      O
+3       1           1       1        am      O
+4       1           1       1      Mary      O
+5       1           1       1       and      O
+6       1           1       1      this      O
+7       1           1       1        is      O
+8       1           1       1      Paul  B-PER
+9       1           1       1       who      O
+10      1           1       1     lives      O
+11      1           1       1        in      O
+12      1           1       1 Scotland.      O
+13      1           1       1        We      O
+14      1           1       1      work      O
+15      1           1       1        as      O
+16      1           1       1 teachers.      O
+17      1           1       1        We      O
+18      1           1       1      have      O
+19      1           1       1         a      O
+20      1           1       1       cat      O
+21      1           1       1     Meilo      O
+22      1           1       1       and      O
+23      1           1       1       she      O
+24      1           1       1        is      O
+25      1           1       1         a      O
+26      1           1       1    tabby.      O
+27      1           1       1  Scotland  B-LOC
+28      1           1       1        is      O
+29      1           1       1      cold      O
+30      1           1       1       and      O
+31      1           1       1     rainy      O
+32      1           1       1        in      O
+33      1           1       1       the      O
+34      1           1       1    winter      O
+35      1           1       1       but      O
+36      1           1       1         I      O
+37      1           1       1      like      O
+38      1           1       1  Scotland  B-LOC</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">show_only_recognised</span>(entities_in_word)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                all_names
+1 Hello/B-ORG, Paul/B-PER, Scotland/B-LOC, Scotland/B-LOC</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>text <span class="ot">=</span><span class="st">"Hello I am Paul and this is Fred we live in Scotland. We work as school teachers.  We have a cat called Bob and he is a tabby. Scotland is cold and rainy in the winter but I like Scotland."</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>entities_in_word <span class="ot">&lt;-</span> <span class="fu">extract_entities</span>(text)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>entities_in_word</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   doc_id sentence_id term_id      term entity
+1       1           1       1     Hello  B-ORG
+2       1           1       1         I      O
+3       1           1       1        am      O
+4       1           1       1      Paul  B-PER
+5       1           1       1       and      O
+6       1           1       1      this      O
+7       1           1       1        is      O
+8       1           1       1      Fred  B-PER
+9       1           1       1        we      O
+10      1           1       1      live      O
+11      1           1       1        in      O
+12      1           1       1 Scotland.      O
+13      1           1       1        We      O
+14      1           1       1      work      O
+15      1           1       1        as      O
+16      1           1       1    school      O
+17      1           1       1 teachers.      O
+18      1           1       1        We      O
+19      1           1       1      have      O
+20      1           1       1         a      O
+21      1           1       1       cat      O
+22      1           1       1    called      O
+23      1           1       1       Bob  B-PER
+24      1           1       1       and      O
+25      1           1       1        he      O
+26      1           1       1        is      O
+27      1           1       1         a      O
+28      1           1       1    tabby.      O
+29      1           1       1  Scotland  B-LOC
+30      1           1       1        is      O
+31      1           1       1      cold      O
+32      1           1       1       and      O
+33      1           1       1     rainy      O
+34      1           1       1        in      O
+35      1           1       1       the      O
+36      1           1       1    winter      O
+37      1           1       1       but      O
+38      1           1       1         I      O
+39      1           1       1      like      O
+40      1           1       1 Scotland.      O</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">show_only_recognised</span>(entities_in_word)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                       all_names
+1 Hello/B-ORG, Paul/B-PER, Fred/B-PER, Bob/B-PER, Scotland/B-LOC</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>data.table version</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>text <span class="ot">=</span><span class="st">"Hello I am Mary and this is Paul who lives in Scotland. We work as teachers.  We have a cat Meilo and she is a tabby. Scotland is cold and rainy in the winter but I like Scotland"</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>entities_in_word <span class="ot">&lt;-</span> <span class="fu">as.data.table</span>(<span class="fu">predict</span>(nametagger_model, <span class="at">newdata =</span> text))</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>entities_in_word[entity <span class="sc">!=</span> <span class="st">"O"</span>, <span class="co"># an O (oh) not a zero</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>                 .(<span class="at">all_names =</span> <span class="fu">paste</span>(term, entity, <span class="at">sep =</span> <span class="st">"/"</span>, <span class="at">collapse =</span> <span class="st">", "</span>))</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>                ]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                 all_names
+                                                    &lt;char&gt;
+1: Hello/B-ORG, Paul/B-PER, Scotland/B-LOC, Scotland/B-LOC</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>text <span class="ot">=</span><span class="st">"Hello I am Paul and this is Fred we live in Scotland. We work as school teachers.  We have a cat called Bob and he is a tabby. Scotland is cold and rainy in the winter but I like Scotland."</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>entities_in_word <span class="ot">&lt;-</span> <span class="fu">as.data.table</span>(<span class="fu">predict</span>(nametagger_model, <span class="at">newdata =</span> text))</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>entities_in_word[entity <span class="sc">!=</span> <span class="st">"O"</span>, <span class="co"># an O (oh) not a zero</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>                 .(<span class="at">all_names =</span> <span class="fu">paste</span>(term, entity, <span class="at">sep =</span> <span class="st">"/"</span>, <span class="at">collapse =</span> <span class="st">", "</span>))</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>                ]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                        all_names
+                                                           &lt;char&gt;
+1: Hello/B-ORG, Paul/B-PER, Fred/B-PER, Bob/B-PER, Scotland/B-LOC</code></pre>
+</div>
+</div>
+</section>
+<section id="activity-what-do-you-notice-about-the-outputs-of-above-two-sentences" class="level2">
+<h2 class="anchored" data-anchor-id="activity-what-do-you-notice-about-the-outputs-of-above-two-sentences">ACTIVITY: What do you notice about the outputs of above two sentences?</h2>
+<p>Look carefully at the outpits of above code. Two sentences provide slightly different outputs of the named entity recognition. Why do you think it finds some names and locations and not others?</p>
+<p>Can you do any preprocessing that may help? Try doing it by hand (literally scroll up and change the sentences, re-run the code and see if things improved). Do you feel this process of cleaning up like this could be automated?</p>
+<p><a href="./hints/hint_8_2.Rmd">HINT: Answer</a></p>
+</section>
+<section id="ner-tagging-with-entity-package" class="level2">
+<h2 class="anchored" data-anchor-id="ner-tagging-with-entity-package">NER tagging with <code>entity</code> package</h2>
+<p>We are now going to use a package called <code>entity</code> to do some NER tagging. This package <code>entity</code> is interesting, because it combines other packages, it’s a wrapper to simplify and extend <a href="https://cran.r-project.org/web/packages/NLP/index.html">NLP package</a> and <a href="https://cran.r-project.org/web/packages/openNLP/index.html">openNLP package</a> both used for named entity recognition.</p>
+<p>The <code>entity</code> package contains 6 entity extractors that take a text vector and return a list of vectors of named entities.</p>
+<p>The entity extractors include:</p>
+<ol type="1">
+<li><p><code>person_entity</code></p></li>
+<li><p><code>location_entity</code></p></li>
+<li><p><code>organization_entity</code></p></li>
+<li><p><code>date_entity</code></p></li>
+<li><p><code>money_entity</code></p></li>
+<li><p><code>percent_entity</code></p></li>
+</ol>
+<p>First lets install and load the libraries we need. This involves downloading a compressed file (.zip or .tar.gz) and decompressing it.</p>
+<p>We will first look at the inbuilt <code>wiki</code> data to see person entities. If it asks you to install packages select yes. This may take a few moments to run if it needs to download.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">NOTE</span><span class="co">! at this point RStudio might ask you a question in 'Console' area at the bottom of your screen.</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Go there and type 'Yes' and click Enter. It will start installing a large-ish file (74.2 MB), which will take 2-3 minutes</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co">#call the data</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(wiki)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="co">#ask the entity package to tag the data wiki for persons</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="fu">person_entity</span>(wiki)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+NULL
+
+[[2]]
+NULL
+
+[[3]]
+[1] "Alexander Graham Bell"
+
+[[4]]
+NULL
+
+[[5]]
+NULL
+
+[[6]]
+NULL
+
+[[7]]
+NULL</code></pre>
+</div>
+</div>
+<p>Lets call the entity tagger on our Corona tweet data.</p>
+<p>We create a new column for our data frame called ‘Loc’ and we call the location_entity function with the ‘text’ column as input. It will take a minute.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>Corona_NLP_DF<span class="sc">$</span>Loc<span class="ot">&lt;-</span><span class="fu">location_entity</span>(Corona_NLP_DF<span class="sc">$</span>text)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we are going to create a separate data frame for Locations and count the number of times each country occurs.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">#First we add a column for row number</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>Corona_NLP_DF <span class="sc">%&lt;&gt;%</span> <span class="fu">mutate</span>(<span class="at">row =</span> <span class="fu">row_number</span>())</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Now we create a datframe, first removing any columns with NULL as Location and then unnest the entries where there are multiple countries in a tweet.</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>country_counts_from_recogniser  <span class="ot">&lt;-</span> Corona_NLP_DF <span class="sc">%&gt;%</span> </span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.null</span>(Loc)) <span class="sc">%&gt;%</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(Loc) <span class="sc">%&gt;%</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">c</span>(Loc, row))</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>country_counts_from_recogniser_ordered<span class="ot">&lt;-</span>country_counts_from_recogniser  <span class="sc">%&gt;%</span> </span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(Loc)  <span class="sc">%&gt;%</span> </span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) </span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a><span class="co">#different way to do the count above </span></span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a><span class="co">#country_counts_from_recogniser_ordered &lt;- country_counts_from_recogniser %&gt;% group_by(Loc) %&gt;% count()</span></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>country_counts_from_recogniser_ordered</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 270 × 2
+   Loc            n
+   &lt;chr&gt;      &lt;int&gt;
+ 1 China         38
+ 2 Amazon        33
+ 3 Italy         27
+ 4 Canada        20
+ 5 California    12
+ 6 Europe        11
+ 7 Toronto       10
+ 8 Spain          9
+ 9 Wash           9
+10 America        8
+# ℹ 260 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="activity-take-a-look-at-the-two-dataframes-above-country_counts_just_words_ordered-and-country_counts_from_recogniser_ordered" class="level2">
+<h2 class="anchored" data-anchor-id="activity-take-a-look-at-the-two-dataframes-above-country_counts_just_words_ordered-and-country_counts_from_recogniser_ordered">ACTIVITY: Take a look at the two dataframes above <code>country_counts_just_words_ordered</code> and <code>country_counts_from_recogniser_ordered</code></h2>
+<p><code>country_counts_just_words_ordered</code> is the one you made at the top of this exercise with the lexicon from gapminder. <code>country_counts_from_recogniser_ordered</code> you created now. Can you spot the differences between them. Neither are perfect.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run this to see them one next to another</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>country_counts_just_words_ordered</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 75 × 4
+   country   iso_alpha iso_num times_mentioned
+   &lt;chr&gt;     &lt;chr&gt;       &lt;int&gt;           &lt;int&gt;
+ 1 Canada    CAN           124              72
+ 2 China     CHN           156              50
+ 3 Italy     ITA           380              36
+ 4 India     IND           356              27
+ 5 Kenya     KEN           404              18
+ 6 Russia    RUS           643              17
+ 7 Belgium   BEL            56              14
+ 8 Spain     ESP           724              12
+ 9 Australia AUS            36              11
+10 Qatar     QAT           634               9
+# ℹ 65 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>country_counts_from_recogniser_ordered</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 270 × 2
+   Loc            n
+   &lt;chr&gt;      &lt;int&gt;
+ 1 China         38
+ 2 Amazon        33
+ 3 Italy         27
+ 4 Canada        20
+ 5 California    12
+ 6 Europe        11
+ 7 Toronto       10
+ 8 Spain          9
+ 9 Wash           9
+10 America        8
+# ℹ 260 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="activity-finding-people-with-person_entity" class="level2">
+<h2 class="anchored" data-anchor-id="activity-finding-people-with-person_entity">ACTIVITY: Finding people with person_entity</h2>
+<p>Repeat the steps above for the names. Hint use person_entity()</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co">#  your code here</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="co"># new Person column</span></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>Corona_NLP_DF<span class="sc">$</span>per<span class="ot">&lt;-</span><span class="fu">person_entity</span>(Corona_NLP_DF<span class="sc">$</span>text)</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="co"># get counts of people</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>cor_dt <span class="ot">&lt;-</span> <span class="fu">as.data.table</span>(Corona_NLP_DF)</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>cor_dt[, .(per)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             per
+        &lt;entity&gt;
+   1:     [NULL]
+   2: Fred Meyer
+   3:     [NULL]
+   4:     [NULL]
+   5:     [NULL]
+  ---           
+3794:     [NULL]
+3795:     [NULL]
+3796:     [NULL]
+3797:       Lagi
+3798:     [NULL]</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>cor_dt[<span class="sc">!</span><span class="fu">sapply</span>(per, is.null)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>       ][, .(<span class="at">per =</span> <span class="fu">unlist</span>(per))</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>       ][, .(<span class="at">n =</span> .N), by <span class="ot">=</span> per</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>       ][<span class="fu">order</span>(<span class="sc">-</span>n, per)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                        per     n
+                     &lt;char&gt; &lt;int&gt;
+  1:                    Don     4
+  2:                    Joe     4
+  3:                    Mom     4
+  4:              Retailers     4
+  5:                   Will     4
+ ---                             
+238: WorldWarZ #coronavirus     1
+239:     WorstPresidentEver     1
+240:                    Wow     1
+241:                      Y     1
+242:                   Yeah     1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Corona_NLP_DF %&gt;%</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">#filter(!is.null(per)) %&gt;%</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">#unnest(per) %&gt;%</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">#select(c(per, row))</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(Corona_NLP_DF<span class="sc">$</span>per, <span class="at">min =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `tbl_df()` was deprecated in dplyr 1.0.0.
+ℹ Please use `tibble::as_tibble()` instead.
+ℹ The deprecated feature was likely used in the entity package.
+  Please report the issue to the authors.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `aes_string()` was deprecated in ggplot2 3.0.0.
+ℹ Please use tidy evaluation idioms with `aes()`.
+ℹ See also `vignette("ggplot2-in-packages")` for more information.
+ℹ The deprecated feature was likely used in the entity package.
+  Please report the issue to the authors.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="nlp_badge_08_Named_Entity_Recognition_1.3_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><a href="./hints/hint_8_4.Rmd">Hint: Answer</a></p>
+</section>
+<section id="but-why-does-it-sometimes-not-work-very-well" class="level2">
+<h2 class="anchored" data-anchor-id="but-why-does-it-sometimes-not-work-very-well">But… why does it sometimes not work very well?</h2>
+<p>Main reason why NLP tools do not work is the context: if a model was trained on medical data, it will not perform well on tweets, and the other way around.</p>
+<p>Just before we finish this notebook, let’s use the person recognition tool on a text of a nover:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co">#  your code here</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>pride_prejudice <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">"./data/pride_prejudice.txt"</span>, <span class="at">stringsAsFactor =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(pride_prejudice)[<span class="dv">1</span>] <span class="ot">=</span><span class="st">"text_line"</span> </span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>pride_prejudice<span class="sc">$</span>Name<span class="ot">&lt;-</span><span class="fu">person_entity</span>(pride_prejudice<span class="sc">$</span>text_line)</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="co">#add row number </span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>pride_prejudice <span class="sc">%&lt;&gt;%</span> <span class="fu">mutate</span>(<span class="at">row =</span> <span class="fu">row_number</span>())</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a><span class="co">#creating a names data frame with collapsed list: locations_df</span></span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>names_pp  <span class="ot">&lt;-</span> pride_prejudice <span class="sc">%&gt;%</span> </span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.null</span>(Name)) <span class="sc">%&gt;%</span></span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(Name) <span class="sc">%&gt;%</span></span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">c</span>(Name, row))</span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a>ordered_names_pp<span class="ot">&lt;-</span> names_pp <span class="sc">|&gt;</span></span>
+<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(Name) <span class="sc">|&gt;</span></span>
+<span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) </span>
+<span id="cb47-19"><a href="#cb47-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-20"><a href="#cb47-20" aria-hidden="true" tabindex="-1"></a>ordered_names_pp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 133 × 2
+   Name             n
+   &lt;chr&gt;        &lt;int&gt;
+ 1 Elizabeth      435
+ 2 Jane           168
+ 3 Mr. Collins     75
+ 4 Catherine       68
+ 5 Lucas           36
+ 6 George Allen    33
+ 7 Mary            33
+ 8 William         24
+ 9 Mrs. Bennet     18
+10 Mrs. Collins    15
+# ℹ 123 more rows</code></pre>
+</div>
+</div>
+<p>WOW! notice that this is much better. There is still improvement, since eg. name <code>Elizabeth</code> got recognised 435 times but it actually occures in text 634 times, but it could be the case that we need to perform a few extra steps, like text cleanup. What is amazing here, is that we did not have to specify all characters ahead of time!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># try few other names, which ones are closest to perfect? Are they all recognised roughly 50% of times?</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>name_we_look_for <span class="ot">&lt;-</span> <span class="st">"Elizabeth"</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a><span class="co"># count words</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">str_count</span> (pride_prejudice<span class="sc">$</span>text_line, name_we_look_for))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 634</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co"># auto recognition</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> ordered_names_pp <span class="sc">%&gt;%</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Name <span class="sc">==</span> name_we_look_for) <span class="sc">%&gt;%</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(n)</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>result</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 1
+      n
+  &lt;int&gt;
+1   435</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="reflection" class="level1">
+<h1>Reflection:</h1>
+<p>Now is a good moment to write down your self reflection: think of 3 STARS (things that you learned in this badge), and 1 WISH: a thing you wish you understood better. You might also thing of what would you do to fulfil your wish. Write them down.</p>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion:</h1>
+<p>Now we have looked at identifying Named Entities in the data. You’ve seen packages that can be used for it, and some of their limitations and power. One thing that is very clear is: THESE ARE NOT VERY SUITABLE. Or at least not for this data.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
