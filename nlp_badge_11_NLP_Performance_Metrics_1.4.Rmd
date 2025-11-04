@@ -1,6 +1,8 @@
 ---
 title: "Badge 11 NLP Performance Metrics"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 # NLP Performance Metrics
@@ -41,10 +43,10 @@ True Negatives (TN): 100 (correctly predicted negative examples)
 ```{r}
 # complete the code below with your values
 
-TP <- 123
-FP <- 234
-FN <- 345
-TN <- 456
+TP <- 70
+FP <- 10
+FN <- 20
+TN <- 100
 ```
 
 [Hint: Answer](./hints/hint_11_1.Rmd)
@@ -68,17 +70,20 @@ cat("Some answer:", round(something, 7), "\n") # eg. round to 7 decimals
 OK now it's your turn:
 ```{r}
 # Calculate Precision
-precision <- #your code, use variables you defined in your code previously: TP, FP, ... 
+# positive predictive value
+
+precision <- TP / (FP + TP)
 
 # Calculate Recall
-recall <- #your code
+# true positive rate
+recall <- TP / (FN + TP)
 
-# Calculate F1 Score
-f1_score <- #your code
+# Calculate F1 Score: harmonic mean of precision and recall
+# 2TP / (2TP + FP + FN)
+f1_score <- 2 * TP / (2 * TP + FP + FN)
 
-cat("something?", "\n") # what does cat and \n do? If you're not sure there's an example below in "Fun stuff" section
-cat("something else?", "\n")
-cat("something else else?", "\n")
+cat(sprintf("The precision is %.3f and recall is %.3f and f1 score %.3f!",
+            precision, recall, f1_score))
 ```
 
 
@@ -109,8 +114,13 @@ Now we will use the package `MLmetrics` to call functions precision,recall and F
 ```{r, include=FALSE}
 # WHEN YOU RUN THIS CODE, YOU MIGHT BE ASKED IF YOU'D LIKE TO RELOAD RSTUDIO: **ANSWER 'NO'**
 # for all packages we need:
-install.packages("pacman")
-pacman::p_load(MLmetrics, dplyr)
+# Set CRAN mirror first
+options(repos = c(CRAN = "https://cloud.r-project.org/"))
+
+# Install pacman if needed
+if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load(MLmetrics, stringr, dplyr)
 ```
 
 Notice that We will not do the math ourselves this time, instead we will lean on the MLmetrics and use that library's functions instead!

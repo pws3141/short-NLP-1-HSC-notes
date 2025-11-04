@@ -1,6 +1,8 @@
 ---
 title: "Badge 10 Annotation"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 # Human Annotation
