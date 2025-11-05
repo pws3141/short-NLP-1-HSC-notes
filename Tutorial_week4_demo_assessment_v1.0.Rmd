@@ -1,6 +1,5 @@
 ---
 title: "Assessment Demonstration"
-output: pdf_document
 date: "2024-11-19"
 ---
 
@@ -33,29 +32,154 @@ Your report will be at the very bottom of this markdown file. This is because if
 ## Lengths of the report: 1000 words. Example of how you can use the words: ('Learning' titles count towards word count)
 
 Introduction: 75 words
-Five Learnings: 150 words yeach ( together 750 words)
+Five Learnings: 150 words each ( together 750 words)
 Conclusion: 75 words
 
 There is no limit on your code, but words written in code will not contribute to your mark. (so do not just put your excess words as a comment in code)
 
 ## Load the data
 ```{r}
+library(data.table)
+library(tidyverse)
+library(tidytext)
+library(wordcloud)
+library(wordcloud2)
+
 file_path='https://raw.githubusercontent.com/drpawelo/data/refs/heads/main/health/guardian_demo_500.csv'
 guardian_articles_demo <- read.csv(file_path, stringsAsFactors =FALSE, header=TRUE)
-guardian_articles_demo
+guardian_dt <- as.data.table(guardian_articles_demo)
 ```
-
-
-
 
 # Example Report:
 
 ```{r}
 # code cleanup goes here!
+
+# split out different pillarId / sectionId
+guardian_dt[, .(n = .N), by = .(pillarId, sectionId)
+         ][order(-n)]
+
+# unnest_tokens
+guardian_counts <- guardian_dt[# unnest tokens
+          , unnest_tokens(.SD, output = word, input = fields.text)
+        ][# remove stop_words
+          !(word  %in% stop_words$word)
+        ][# count words
+          , .(n = .N), by = word
+        ][order(-n)]
+
+guardian_counts
+```
+
+```{r}
+set.seed(1234)
+
+#Now lets draw the word cloud
+wordcloud(
+  words = guardian_counts[, word],
+  freq = guardian_counts[, n],
+  min.freq = 50,
+  max.words = 50,
+  random.order = FALSE,
+  rot.per = 0.35,
+  colors = brewer.pal(8, "Dark2")
+)
+```
+
+```{r}
+#Create sentiment tibble
+guardian_sentiment <- guardian_articles_demo %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(pillarId, index=row_number(), sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+guardian_words <- guardian_dt[# unnest tokens
+          , unnest_tokens(.SD, output = word, input = fields.text)
+        ][# remove stop_words
+          !(word  %in% stop_words$word)
+        ]
+
+set.seed(10)
+guardian_words %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("gray20", "gray80"),
+                   max.words = 100)
 ```
 
 
-## Title: 5 things I learned from Guardian's articles abotu Health issues.
+The word `Trump`, and `Cleverly` maybe are names... not sentiments...
+
+Conservative is used as a negative, but might be relating to the party.
+
+```{r}
+#| fig-ncol: 2
+
+ids <- unique(guardian_words[, c(pillarId)])
+for (i in 1:length(ids)) {
+  guardian_words[pillarId == ids[i]] %>%
+    inner_join(get_sentiments("bing")) %>%
+    count(word, sentiment, sort = TRUE) %>%
+    acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+    comparison.cloud(x, colors = c("gray20", "gray80"),
+                     max.words = 50)
+}
+
+```
+
+```{r}
+# bigrams
+guardian_bigrams <- guardian_dt[, unnest_tokens(.SD, 
+                                                output = bigram, input = fields.text,
+                                                token = "ngrams", n = 2)
+                                ][
+                                  , .(n = .N), by = bigram
+                                ][order(-n)]
+
+guardian_bigrams_stop <- guardian_bigrams[
+                          , c("word1", "word2") := tstrsplit(bigram, "\\s+")
+                          ][
+                          !(word1 %in% stop_words$word|word2 %in% stop_words$word)
+                          ]
+guardian_bigrams_stop[, bigram := NULL]
+
+
+#Create the bigram_graph
+bigram_graph <- guardian_bigrams_stop %>%
+  select(word1, word2, n) %>%
+  filter(n > 40) %>%
+  graph_from_data_frame()
+```
+
+```{r}
+#First graph option
+ggraph(bigram_graph, layout = "fr") + #use the fr layout algorithm
+  geom_edge_link() + 
+  geom_node_point() + 
+  geom_node_text(aes(label = name),
+                 repel = TRUE) + #use repel so the words do not overlap
+  theme_void() #void theme
+
+
+#the above row determines the lay the arrows will look
+#check out ?arrow for more information
+arrows_info <- grid::arrow(type = "closed", length = unit(.2, "cm"))
+
+#Second Graph option
+ggraph(bigram_graph, layout = "fr") + #use the fr layout
+  geom_edge_link(aes(edge_alpha = n), #vary the edge color by n
+                 #darker lines are bigrams that occur more often
+                 arrow = arrows_info, #add the arrow information
+  ) +
+  geom_node_point(size = 2,color = "lightblue") + #makes the geom slightly larger
+  geom_node_text(aes(label = name), #adds text labels for the nodes
+                 repel = TRUE) +
+  theme_void() #void theme
+```
+
+## Title: 5 things I learned from Guardian's articles about Health issues.
 
 ## Introduction
 
