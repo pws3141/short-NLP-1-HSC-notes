@@ -1,0 +1,97 @@
+---
+title: "Assessment Demonstration"
+output: pdf_document
+date: "2024-11-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assessment File
+
+In this file you will find a few sections, all additional information will be on Learn. This file is not yet your assessment, but it shows you most of the components of the assessment, and the data you will be given to use in the assessment. The final assessment file will lok very simmilar and you will be able to copy-paste any code you created in this demo file into there.
+
+## In this file:
+
+1. Loading the data
+2. Example operation on data
+3. How to 'KNIT' (export) to pdf. 
+
+## Files:
+
+Your final submission will consist of 2 files: your markdown file (like this one) and the the exported pdf (produced in RStudio by clicking the Dropdown next to KNIT 🧶 button on top, and chosing 'Knit to pdf')
+
+## Data:
+
+One of the first cells below will download the data, if you do not have them yet. Data is a very large `csv` file. That's why if is not included in the assessment, but instead you need to run R code which will download it.
+
+## Where should the report go?
+
+Your report will be at the very bottom of this markdown file. This is because if you want to include a table or a graph in your report, the code that creates it (or a call to function which creates it) will need to be there, amongst your writing.
+
+## Lengths of the report: 1000 words. Example of how you can use the words: ('Learning' titles count towards word count)
+
+Introduction: 75 words
+Five Learnings: 150 words yeach ( together 750 words)
+Conclusion: 75 words
+
+There is no limit on your code, but words written in code will not contribute to your mark. (so do not just put your excess words as a comment in code)
+
+## Load the data
+```{r}
+file_path='https://raw.githubusercontent.com/drpawelo/data/refs/heads/main/health/guardian_demo_500.csv'
+guardian_articles_demo <- read.csv(file_path, stringsAsFactors =FALSE, header=TRUE)
+guardian_articles_demo
+```
+
+
+
+
+# Example Report:
+
+```{r}
+# code cleanup goes here!
+```
+
+
+## Title: 5 things I learned from Guardian's articles abotu Health issues.
+
+## Introduction
+
+Some short introduction, eg. I did this and that.
+
+## Learning 1: Something you learned will be here eg: People talk much more about nurses than about doctors, and Scotland is mentioned as frequently as England.
+
+Here you explain what you found, how you found it, and what are possible limitations of it.
+
+```{r}
+# your workings
+# code which backs your reasoning from above paragraph. 
+```
+
+
+```{r}
+# your visualisation / graph / table / print
+# visualisation which backs your reasoning from above paragraph. 
+```
+
+## Learning 2... same as above
+
+here the writeup paragraph, then two blocks of code for the this learning
+
+## Learning 3... same as above
+
+here the writeup paragraph, then two blocks of code for the this learning
+
+## Learning 4... same as above
+
+here the writeup paragraph, then two blocks of code for the this learning
+
+## Learning 5... same as above
+
+here the writeup paragraph, then two blocks of code for the this learning
+
+## Conclusion
+
+Short conclusion here
