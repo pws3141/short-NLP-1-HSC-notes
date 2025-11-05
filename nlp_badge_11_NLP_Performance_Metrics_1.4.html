@@ -1674,10 +1674,10 @@ that were missed) True Negatives (TN): 100 (correctly predicted negative
 examples)</p>
 <pre class="r"><code># complete the code below with your values
 
-TP &lt;- 123
-FP &lt;- 234
-FN &lt;- 345
-TN &lt;- 456</code></pre>
+TP &lt;- 70
+FP &lt;- 10
+FN &lt;- 20
+TN &lt;- 100</code></pre>
 <p><a href="./hints/hint_11_1.Rmd">Hint: Answer</a></p>
 </div>
 <div id="activity-calculate-precision-recall-and-f1" class="section level2">
@@ -1698,20 +1698,21 @@ cat(&quot;Some answer:&quot;, round(something, 7), &quot;\n&quot;) # eg. round t
 <pre><code>## Some answer: 0.7777778</code></pre>
 <p>OK now it’s your turn:</p>
 <pre class="r"><code># Calculate Precision
-precision &lt;- #your code, use variables you defined in your code previously: TP, FP, ... 
+# positive predictive value
+
+precision &lt;- TP / (FP + TP)
 
 # Calculate Recall
-recall &lt;- #your code
+# true positive rate
+recall &lt;- TP / (FN + TP)
 
-# Calculate F1 Score
-f1_score &lt;- #your code
+# Calculate F1 Score: harmonic mean of precision and recall
+f1_score &lt;- 2 * (precision * recall) / (precision + recall)
 
-cat(&quot;something?&quot;, &quot;\n&quot;) # what does cat and \n do? If you&#39;re not sure there&#39;s an example below in &quot;Fun stuff&quot; section</code></pre>
-<pre><code>## something?</code></pre>
-<pre class="r"><code>cat(&quot;something else?&quot;, &quot;\n&quot;)</code></pre>
-<pre><code>## something else?</code></pre>
-<pre class="r"><code>cat(&quot;something else else?&quot;, &quot;\n&quot;)</code></pre>
-<pre><code>## something else else?</code></pre>
+
+cat(sprintf(&quot;The precision is %.3f and recall is %.3f and f1 score %.3f!&quot;,
+            precision, recall, f1_score))</code></pre>
+<pre><code>## The precision is 0.875 and recall is 0.778 and f1 score 0.824!</code></pre>
 <p><a href="./hints/hint_11_2.Rmd">Hint: Answer</a></p>
 </div>
 <div id="fun-r-stuff-difference-between-print-and-cat" class="section level2">
@@ -1866,7 +1867,28 @@ things by hand before you start coding, at least to the level where you
 understand them well enough that you could do them by hand.</p>
 <p>Do this on a piece of paper! Or write it down in this code cell, but
 do the calculation yourself.</p>
-<pre class="r"><code># you could doodle your work here</code></pre>
+<pre class="r"><code># you could doodle your work here
+
+&gt; gold_entities
+  ID    Type Start End     Text
+1 T1 Disease    10  18 Diabetes FN
+2 T2    Drug    30  36  Insulin
+3 T3 Disease    50  58 Diabetes
+
+&gt; pred_entities 
+  ID    Type Start End     Text
+1 T1 Disease    10  19 Diabetes FP (incorrect End)
+2 T2    Drug    30  36  Insulin TP (matches gold)
+FN (misses third part)
+
+# counts
+TP &lt;- 1
+FP &lt;- 1
+FN &lt;- 2
+
+precision &lt;- TP / (TP + FP) # = 1/2
+recall &lt;- TP / (TP + FN) # = 1/2
+f1_score &lt;- 2 * (precision * recall) / (precision + recall)</code></pre>
 <p><a href="./hints/hint_11_3.Rmd">Hint: Only once you did it by
 yourself first</a></p>
 </div>
@@ -1874,20 +1896,29 @@ yourself first</a></p>
 <h2>Using R to compare and evaluate two BART files:</h2>
 <p>To achieve this we will use <code>merge</code> function. In your R
 console type <code>?merge</code> to find out what it does.</p>
-<pre class="r"><code>fruits_ripe &lt;-data.frame(name = c(&quot;banana&quot;,&quot;kiwi&quot;,&quot;plum&quot;, &quot;apple&quot;), 
+<pre class="r"><code>fruits_ripe &lt;-data.table(name = c(&quot;banana&quot;,&quot;kiwi&quot;,&quot;plum&quot;, &quot;apple&quot;), 
                          colour = c(&quot;yellow&quot;, &quot;green&quot;, &quot;purple&quot;,&quot;green&quot;),
                          amount=c(2,4,5,6))
-fruits_raw &lt;-data.frame(name = c( &quot;apple&quot;, &quot;banana&quot;,&quot;kiwi&quot;,&quot;plum&quot;), 
+fruits_raw &lt;-data.table(name = c( &quot;apple&quot;, &quot;banana&quot;,&quot;kiwi&quot;,&quot;plum&quot;), 
                         colour = c(&quot;green&quot;, &quot;green&quot;, &quot;green&quot;, &quot;green&quot;),
                         amount=c(2,1,3,9))
-merge(fruits_ripe, fruits_raw, by=c(&quot;name&quot;, &quot;colour&quot;))</code></pre>
+fruits_merge &lt;- merge(fruits_ripe, fruits_raw, by=c(&quot;name&quot;, &quot;colour&quot;))
+fruits_merge</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
 {"columns":[{"label":["name"],"name":[1],"type":["chr"],"align":["left"]},{"label":["colour"],"name":[2],"type":["chr"],"align":["left"]},{"label":["amount.x"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["amount.y"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"apple","2":"green","3":"6","4":"2"},{"1":"kiwi","2":"green","3":"4","4":"3"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <pre class="r"><code># look at the result below - what does merge return? why those fruits were kept, and what are those new columns?
-# how can you answer a simple question: &quot;how many identical fruits are in both sets?&quot; in a simple numeric way?</code></pre>
+# how can you answer a simple question: &quot;how many identical fruits are in both sets?&quot; in a simple numeric way?
+
+fruits_merge[, total := amount.x + amount.y]
+fruits_merge</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["name"],"name":[1],"type":["chr"],"align":["left"]},{"label":["colour"],"name":[2],"type":["chr"],"align":["left"]},{"label":["amount.x"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["amount.y"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["total"],"name":[5],"type":["dbl"],"align":["right"]}],"data":[{"1":"apple","2":"green","3":"6","4":"2","5":"8"},{"1":"kiwi","2":"green","3":"4","4":"3","5":"7"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
 <p>Now let’s apply the same method to our data. Below function we
 will:</p>
 <ul>
@@ -1914,13 +1945,10 @@ calculate_metrics &lt;- function(gold, pred) {
   false_positives &lt;- nrow(pred) - true_positives
   false_negatives &lt;- nrow(gold) - true_positives
   
-  print(&quot;true_positives&quot;)
-  print(true_positives)
-  print(&quot;false_positives&quot;)
-  print(false_positives)
-  print(&quot;false_negatives&quot;)
-  print(false_negatives)
-  
+  cat(sprintf(&quot;True positives: %d\n&quot;, true_positives))
+  cat(sprintf(&quot;False positives: %d\n&quot;, false_positives))
+  cat(sprintf(&quot;False negatives: %d\n&quot;, false_negatives))
+      
   # Calculate precision, recall, and F1
   precision &lt;- true_positives / (true_positives + false_positives)
   recall &lt;- true_positives / (true_positives + false_negatives)
@@ -1931,12 +1959,9 @@ calculate_metrics &lt;- function(gold, pred) {
 <p>Now we can use our function to compare our gold and prod.</p>
 <pre class="r"><code># Calculate metrics
 metrics &lt;- calculate_metrics( gold_entities, pred_entities )</code></pre>
-<pre><code>## [1] &quot;true_positives&quot;
-## [1] 1
-## [1] &quot;false_positives&quot;
-## [1] 1
-## [1] &quot;false_negatives&quot;
-## [1] 2</code></pre>
+<pre><code>## True positives: 1
+## False positives: 1
+## False negatives: 2</code></pre>
 <pre class="r"><code># Print results
 cat(&quot;Precision:&quot;, metrics$precision, &quot;\n&quot;)</code></pre>
 <pre><code>## Precision: 0.5</code></pre>

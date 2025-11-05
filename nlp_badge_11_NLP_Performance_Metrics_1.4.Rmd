@@ -79,8 +79,8 @@ precision <- TP / (FP + TP)
 recall <- TP / (FN + TP)
 
 # Calculate F1 Score: harmonic mean of precision and recall
-# 2TP / (2TP + FP + FN)
-f1_score <- 2 * TP / (2 * TP + FP + FN)
+f1_score <- 2 * (precision * recall) / (precision + recall)
+
 
 cat(sprintf("The precision is %.3f and recall is %.3f and f1 score %.3f!",
             precision, recall, f1_score))
@@ -120,7 +120,7 @@ options(repos = c(CRAN = "https://cloud.r-project.org/"))
 # Install pacman if needed
 if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(MLmetrics, stringr, dplyr)
+pacman::p_load(data.table, MLmetrics, stringr, dplyr)
 ```
 
 Notice that We will not do the math ourselves this time, instead we will lean on the MLmetrics and use that library's functions instead!
@@ -232,9 +232,29 @@ Label each inconsistency as False/True positive/negative. Calculate by hand prec
 
 Do this on a piece of paper! Or write it down in this code cell, but do the calculation yourself.
 
-```{r}
+```r
 # you could doodle your work here
 
+> gold_entities
+  ID    Type Start End     Text
+1 T1 Disease    10  18 Diabetes FN
+2 T2    Drug    30  36  Insulin
+3 T3 Disease    50  58 Diabetes
+
+> pred_entities 
+  ID    Type Start End     Text
+1 T1 Disease    10  19 Diabetes FP (incorrect End)
+2 T2    Drug    30  36  Insulin TP (matches gold)
+FN (misses third part)
+
+# counts
+TP <- 1
+FP <- 1
+FN <- 2
+
+precision <- TP / (TP + FP) # = 1/2
+recall <- TP / (TP + FN) # = 1/2
+f1_score <- 2 * (precision * recall) / (precision + recall)
 ```
 
 [Hint: Only once you did it by yourself first](./hints/hint_11_3.Rmd)
@@ -245,16 +265,20 @@ To achieve this we will use `merge` function. In your R console type `?merge` to
 
 
 ```{r}
-fruits_ripe <-data.frame(name = c("banana","kiwi","plum", "apple"), 
+fruits_ripe <-data.table(name = c("banana","kiwi","plum", "apple"), 
                          colour = c("yellow", "green", "purple","green"),
                          amount=c(2,4,5,6))
-fruits_raw <-data.frame(name = c( "apple", "banana","kiwi","plum"), 
+fruits_raw <-data.table(name = c( "apple", "banana","kiwi","plum"), 
                         colour = c("green", "green", "green", "green"),
                         amount=c(2,1,3,9))
-merge(fruits_ripe, fruits_raw, by=c("name", "colour"))
+fruits_merge <- merge(fruits_ripe, fruits_raw, by=c("name", "colour"))
+fruits_merge
 
 # look at the result below - what does merge return? why those fruits were kept, and what are those new columns?
 # how can you answer a simple question: "how many identical fruits are in both sets?" in a simple numeric way?
+
+fruits_merge[, total := amount.x + amount.y]
+fruits_merge
 ```
 
 Now let's apply the same method to our data. Below function we will:
@@ -279,13 +303,10 @@ calculate_metrics <- function(gold, pred) {
   false_positives <- nrow(pred) - true_positives
   false_negatives <- nrow(gold) - true_positives
   
-  print("true_positives")
-  print(true_positives)
-  print("false_positives")
-  print(false_positives)
-  print("false_negatives")
-  print(false_negatives)
-  
+  cat(sprintf("True positives: %d\n", true_positives))
+  cat(sprintf("False positives: %d\n", false_positives))
+  cat(sprintf("False negatives: %d\n", false_negatives))
+      
   # Calculate precision, recall, and F1
   precision <- true_positives / (true_positives + false_positives)
   recall <- true_positives / (true_positives + false_negatives)
