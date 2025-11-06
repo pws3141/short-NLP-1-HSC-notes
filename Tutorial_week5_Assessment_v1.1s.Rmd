@@ -1,0 +1,221 @@
+---
+title: "Assessment Final file"
+author: "here put your exam number, eg B12345678 (not your student number S1234 or
+  your name)"
+date: "2024-11-19"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+# this is needed so that KTIT exports correctly
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr) 
+install.packages("pacman")
+pacman::p_load(dplyr, purrr)
+```
+
+
+# Final Assessment for NLP for Health and Social Care: Write a short article titled "Five Learnings from recent Guardian articles about health issues.".
+
+Look at the data. Use techniques you learned on this course. Describe 5 things you learned from that datain a short sentence each. For each of the Learnings provide: code that backs your claims, simple visualisations that back your claims, and a 1-2 paragraphs that explain what you learned.
+
+## In this file:
+
+1. Loading the data
+2. Example operation on data
+3. How to 'KNIT' (export) to .docx (word document) 
+
+## Data you are given:
+
+One of the first cells below will download the data, if you do not have them yet. Data consists of 5 large `.csv` files. You'll notice that we download 5 of them separately and then put them into one variable. 
+
+When you are creating your analysis, and still exploring things, you might choose to work on just one of those smaller dataframes (with just 20% of all data) so that your analysis runs faster. But do not forget to then use all data in your final work (if that's what you plan to do).
+
+The data itself is a collection of 20000 articles from a British newspaper called Guardian. We used their API to get those which is allowed in their licence. You can later on explore that api yourself, but it is beyond the scope of this course. The data comes from the dates between Jan 2023 and November 2024. All articles were picked because they somehow refer to the health-related words: nhs, ambulance, medical, patient, doctor, nurse, hospital, health. We also removed all articles from the Australian section of the guardian (to unify the dataset around UK), and also we removed articles which came from sport-related sections of the newspaper, and some other messy article formats. We also simplified the text to not include any HTML or unusual punctuation characters. In other words: we did some tricky cleanup for you, so that you can just focus on lookin g at the data.
+
+It is not required for this assessment (because data was cleaned up for you), but if you are curious here is the [documentation of the data source (Guardian API)](https://open-platform.theguardian.com/documentation/)
+
+**Column names are:**
+
+- id - unique id of each article
+- webPublicationDate - day of publication
+- sectionId	- section of the newspaper
+- pillarId - a bigger area of the newspaper, this is braoder than section
+- fields.headline - title of the article
+- fields.byline - author of the article, it is called 'by-line' eg. "by Nicky Hanson"
+- fields.text - the actual text of the article, these vary in length
+
+## Where in this document should I do my work (where to put code, writing and visualisations?
+
+Your report will be at the very bottom of this markdown file. This is because if you want to include a table or a graph in your report, the code that creates it (or a call to function which creates it) will need to be there, amongst your writing. When we are marking your work, we will run yoru notebook from top to bottom so make sure you only leave in it the code that you need and that things work well when you restart session (In RStudio > Session > Restart R) and then choose "Run > Run All". We understand that this can take a lot of time to run, especially with some types of the analysis. But we need to be able to run your code to know if it works.
+
+Below you will find 4 components to each "Learning" (Learning is 'one thing uyou learned'. If you prefer you could call then 'Insights')
+
+- `Title` of the Learning: a short sentence saying what you found
+- `Description` of the learning: a 1-2 paragraph description of what you did, what you found, what you achieved, what were the limitations of it. Aim for title and description to together take abotu 150 words for each learning.
+- `R Code with Analysis` which uses things you learned on this course, and backs yoru learnings you described above. This can be split into many code 'chunks' but do keep it clean and remove anything that you did not end up using.
+- `R Code which produces yoru visualisation` - visualisation can be anything that 'shows your data' - a table, a graph, a well-structured printout of some variables. Make sure it is clear what we are supposed to look at.
+
+## Lengths of the report: 1000 words. Example of how you can use the words:
+
+Introduction: 75 words
+Learning 1: 150 words 
+Learning 2: 150 words 
+Learning 3: 150 words 
+Learning 4: 150 words 
+Learning 5: 150 words 
+Conclusion: 75 words
+
+- There is no space/word limit on your code, but words written in code will `not contribute to your mark`. (so do not just put your excess words as a comment in code)
+- Word limit for learnings includes the title of that learning (so you see that we are really after very short, concise paragraphs).
+- It is OK if some `Learnings` are longer than others. Above word counts are just guidelines, but your overall writing should not exceed 1000 words. And since you will ask: 10% more-or-less words is a ussusal university error margin, but aim for 1000 words.
+- We recommend that you write Introduction (what you will do and present) and Conclusion (what are the themes in your findings) at the end.
+- finish each section with a word count in a format like (123 words), and also put the total count of words at the very beginning of your writeup eg (998 words)
+
+## Meanings of Marks:
+
+**Meaning of marks in the British marking system** - the expectations of the marks A, B and C:
+
+- (C) 50%-59%: GOOD - This work is at the level expected from a MSc student. It explains the work clearly, uses code and tools learned on this course. Some parts might be incomplete or missing.
+- (B) 60%-69%: VERY GOOD - This work meets all above criteria, and also shows off student's: analytical reasoning using tools and data; usage of diversity of techniques learned at this course used and skill of interpreting the results; ability to create well structured, sustainable and clean code; ability to use data to justify the statements; ability to use words and visualisations to advance an argument; critical understanding of the practical, ethical and organisational issues raised in the contents of this course; produce real non-trivial insights from the given dataset; completing all this work within the constraints of word limits, tools/infrastructure limitations and deadlines.
+- (A) 70%-up:  EXCELLENT - Every component of above is demonstrated and everything in the assessment is of publishable quality (writing, code, visualisations). Student can use the contents of the course expertly.
+
+As a simple rule of thumb indication: a work of EXCELLENT quality would get published on the Guardian website without any corrections, or you would be happy to attach it to your job application for a Data Scientist role.
+
+
+## Marking Criteria:
+
+You will be marked following this criteria:
+
+### 20% Formulating Findings in a Coherent Story
+
+In each finding, did you explain what you were looking for and what you found? Did you formulate clear titles of findings, and descriptions that explain those titles further? Did you explain what were the assumptions and limitations of what you did? Did you manage to create an encompasing narrative that somehow connects all of your Learnings, or explains how they cover various multiple angles this dataset. Is your writing well structured and of good quality? 
+
+### 20% Using NLP Tools and Data
+
+How well did you use the data and tools learned on this course to answer your question? Your answer should be supported by what you found in the data. Briefly describe why this was the correct data, and correct analysis to perform on it. Did you use a variety of different tools, in a number of different ways? You do not need to do anything extraordinary, just demonstrate that you understand various parts of the course content. 
+
+### 20% Visualisation and Data-driven Storytelling
+
+Did you aid your argument/answer with visual clues? Graph can say a thousand words, but it is also easy to make one which is confusing, or misleading. Use simple (or highly customised) graphs to make your argument clearer. Remember that a good table, or even printing a sentence with some numbers in it, is a visualisation too! Are your Learnings based on your analysis, and results of your code, or rather on your own opinions not backed by code? 
+
+### 20% Code Quality and Structure
+
+Is your code meaningful, clean, readable and DRY (Don't repeat yourself)? Are you using good readable variable names. Do you use your own functions or imported libraries where appropriate. Is your code split into more code-blocks if appropriate? Did you clean up your code and does it not include any old/unused parts? 
+
+### 20 % Limitations and Context of the Data and Tools
+
+Did you indicate understanding of wider aspects on NLP, such as ethics, bias? Did you address the challenges of English language. Is addressing limitations part of your code and analysis? Can you identify what issues apply to this dataset, and which do not?
+
+
+## Conclusion
+
+That's it. In essence your assessment is to: **Review all the badges in the course, and apply five tools you found to a given dataset.** 
+
+This assessment is designed to give you an opportunity to recap on the contents of the course, and get benefits from the work you're already doing.
+
+Good luck!
+
+----
+
+# Starting code for your report (your work starts just after the data has been loaded)
+
+## Download the data
+
+```{r}
+# this part is already written for you, so you can run it once, and thenyou can comment it out, since the data will be already downloaded for you:
+# options(timeout = 600)
+# 
+# # files are actually at 'https://raw.githubusercontent.com/drpawelo/data/refs/heads/main/health/nlp_guardian_batch_1.csv'
+# 
+
+how_many_files_can_your_system_handle = 2 # here put a number from 1 to 5. Dataset was split into 5 evenly spread parts, but loading all of them all at once might overwhelm your R.
+file_path_without_ending='https://raw.githubusercontent.com/drpawelo/data/refs/heads/main/health/nlp_guardian_batch_'
+
+
+for (batch_id in 1:how_many_files_can_your_system_handle){
+  remote_file_name <- paste0(file_path_without_ending, batch_id, ".csv")
+  local_file_name <- paste0("./data/guardian_articles_", batch_id, ".csv")
+	if (!file.exists(local_file_name)){
+	 download.file(remote_file_name, local_file_name)
+	}
+}
+```
+
+Now load the data:
+
+```{r}
+guardian_articles <- seq(1, how_many_files_can_your_system_handle) %>%
+	paste0("./data/guardian_articles_", ., ".csv") %>%
+	map(read.csv, stringsAsFactors =FALSE, header=TRUE, encoding="UTF-8") %>%
+	list_rbind()
+
+# code above finds local name of each file, reds them, and combines them into one dataframe
+
+guardian_articles$id <- 1:nrow(guardian_articles)
+```
+
+Small test if data loaded well:
+
+```{r}
+head(guardian_articles, n=3 )
+```
+
+Start your code here:
+
+```{r}
+# data cleanup code can go here, if it doesn't not really belong to an invividual 'Learning' but rather is shared by them.
+
+
+```
+
+## Title: Five Learnings from recent Guardian articles about health issues. (x words all together)
+
+## Introduction
+
+TODO: Some short introduction, eg. I did this and that. (x words)
+
+## Learning 1: TODO: Something you learned will be here eg: People talk much more about nurses than about doctors, and Scotland is mentioned as frequently as England.
+
+TODO: Here you explain what you found, how you found it, and what are possible limitations of it. (x words, including the above title of the learning)
+
+```{r}
+# your analysis code
+# code which backs your reasoning from above paragraph.
+# For readability you might chose to have your code in multiple blocks like this. To create a new one, use the green +C button in RStudio, and pick 'R' as a type of block.
+# TODO: 
+```
+
+
+```{r}
+# your visualisation code (graph / table / print).
+# visualisation which backs your reasoning from above paragraph. 
+# Make it so that the visualisation appears under this block. So eg. if you created the dataframe to show in the block above this one, just call that variable below here, so that R shows it below.
+# TODO: 
+
+```
+
+## Learning 2... same as above
+
+here the writeup paragraph, then two blocks of code for the this learning (x words, including title)
+
+## Learning 3... same as above
+
+here the writeup paragraph, then two blocks of code for the this learning (x words, including title)
+
+## Learning 4... same as above
+
+here the writeup paragraph, then two blocks of code for the this learning (x words, including title)
+
+## Learning 5... same as above
+
+here the writeup paragraph, then two blocks of code for the this learning  (x words, including title)
+
+## Conclusion
+
+Short conclusion here (x words)
